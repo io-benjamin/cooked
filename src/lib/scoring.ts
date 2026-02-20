@@ -230,29 +230,34 @@ function getTopIssues(
 
 const ROASTS: Record<string, string[]> = {
   rent: [
-    "Your landlord is your biggest investor.",
-    "You're not paying rent, you're paying someone else's mortgage.",
-    "At this rate, you'll own a house... in your dreams.",
+    "Your landlord is eating good because of you.",
+    "Half your check gone before you can blink.",
+    "Working just to keep a roof over your head.",
+    "Rent's due and so is everything else.",
   ],
   savings: [
     "Your emergency fund IS the emergency.",
-    "One car repair away from financial disaster.",
-    "Your savings account is looking real skeletal.",
+    "One car problem away from chaos.",
+    "That savings account looking real empty.",
+    "Living paycheck to paycheck hits different.",
   ],
   creditCard: [
-    "You're making credit card companies very happy.",
-    "That APR is eating you alive.",
-    "You're paying interest on interest. Classic.",
+    "Credit card companies sending you thank you cards.",
+    "That interest rate doing the heavy lifting.",
+    "Minimum payments keeping you stuck.",
+    "The debt cycle is real.",
   ],
   debt: [
-    "You owe more than some people make.",
-    "Your debt has its own personality at this point.",
-    "Debt free? Never heard of her.",
+    "The bills keep coming and they don't stop coming.",
+    "Debt's got you in a headlock.",
+    "You're working for yesterday's purchases.",
+    "Digging out of this hole gonna take a minute.",
   ],
   general: [
-    "Financially unrecognizable.",
-    "The struggle is very, very real.",
-    "At least you have your health... hopefully.",
+    "It's rough out here.",
+    "The struggle is very real.",
+    "You're not alone — most people are cooked too.",
+    "At least you're facing it head on.",
   ],
 };
 
@@ -292,27 +297,32 @@ function generateRecommendations(issues: Issue[]): Recommendation[] {
   for (const issue of issues) {
     if (issue.category === 'Housing') {
       recommendations.push({
-        title: 'Reduce Housing Costs',
-        description: 'Consider getting a roommate, moving to a cheaper area, or negotiating rent.',
+        title: 'Lower Your Housing Costs',
+        description: 'Look into roommates, moving somewhere cheaper, assistance programs, or negotiating rent when your lease is up.',
       });
     } else if (issue.category === 'Emergency Fund') {
       recommendations.push({
-        title: 'Build Your Emergency Fund',
-        description: 'Open a high-yield savings account and automate $50-100/month.',
+        title: 'Start a Small Emergency Fund',
+        description: 'Even $500 helps. Set up auto-transfer of $25-50/paycheck to a separate savings account.',
         link: '#',
-        linkText: 'Best HYSA rates →',
+        linkText: 'Best savings accounts →',
       });
     } else if (issue.category === 'Credit Card Debt') {
       recommendations.push({
-        title: 'Attack Credit Card Debt',
-        description: 'Pay minimums on everything, throw extra at highest APR card.',
+        title: 'Tackle That Credit Card Debt',
+        description: 'Pay minimums on all cards, put any extra toward the highest interest one first. Look into balance transfer cards.',
       });
     } else if (issue.category === 'Credit Score') {
       recommendations.push({
-        title: 'Improve Your Credit',
-        description: 'Check for errors, become an authorized user, use credit responsibly.',
+        title: 'Work on Your Credit',
+        description: 'Check your free credit report for errors. Pay bills on time. Keep credit card balances low.',
         link: '#',
         linkText: 'Free credit report →',
+      });
+    } else if (issue.category === 'Total Debt') {
+      recommendations.push({
+        title: 'Make a Debt Payoff Plan',
+        description: 'List all debts with interest rates. Focus extra payments on highest rate first while paying minimums on others.',
       });
     }
   }

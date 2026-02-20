@@ -12,7 +12,7 @@ export interface UserInputs {
   
   // Section 3: Housing
   monthlyRent: number;
-  livingArrangement: 'alone' | 'roommates' | 'partner' | 'family';
+  livingArrangement: 'alone' | 'roommates' | 'partner' | 'family' | 'kids';
   
   // Section 4: Debt
   studentLoans: number;
