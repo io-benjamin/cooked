@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { CalculatorForm } from '@/components/calculator/CalculatorForm';
 import { ResultsCard } from '@/components/results/ResultsCard';
 import { calculateCookedScore } from '@/lib/scoring';
@@ -48,7 +49,7 @@ export default function Home() {
             </span>
           </div>
           <nav className="hidden sm:flex gap-6 text-sm text-white/50">
-            <a href="#" className="hover:text-white transition-colors">leaderboard</a>
+            <Link href="/leaderboard" className="hover:text-white transition-colors">leaderboard</Link>
             <a href="#" className="hover:text-white transition-colors">about</a>
           </nav>
         </div>
