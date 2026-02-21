@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import html2canvas from 'html2canvas';
 import { CookedResult } from '@/types/calculator';
 import { Button } from '@/components/ui/button';
 import { getTierLabel } from '@/lib/scoring';
@@ -55,6 +54,7 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
   const generateImage = async (): Promise<Blob | null> => {
     if (!shareCardRef.current) return null;
     
+    const html2canvas = (await import('html2canvas')).default;
     const canvas = await html2canvas(shareCardRef.current, {
       backgroundColor: '#0a0a0a',
       scale: 2,
