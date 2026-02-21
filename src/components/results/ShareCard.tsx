@@ -67,19 +67,30 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         {/* Header */}
         <div style={{ 
           display: 'flex', 
+          flexDirection: 'column',
           alignItems: 'center', 
-          gap: '8px',
-          marginBottom: '20px',
+          gap: '4px',
+          marginBottom: '16px',
           position: 'relative',
         }}>
-          <span style={{ fontSize: '24px' }}>🔥</span>
-          <span style={{ 
-            fontSize: '18px', 
-            fontWeight: 700, 
-            color: 'rgba(255,255,255,0.5)',
-            letterSpacing: '2px',
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '24px' }}>🔥</span>
+            <span style={{ 
+              fontSize: '20px', 
+              fontWeight: 800, 
+              color: 'rgba(255,255,255,0.7)',
+              letterSpacing: '3px',
+            }}>
+              AM I COOKED?
+            </span>
+            <span style={{ fontSize: '24px' }}>🔥</span>
+          </div>
+          <span style={{
+            fontSize: '12px',
+            color: 'rgba(255,255,255,0.35)',
+            letterSpacing: '1px',
           }}>
-            AM I COOKED?
+            THE FINANCIAL REALITY CHECK
           </span>
         </div>
 
@@ -188,20 +199,30 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         {/* Footer */}
         <div style={{
           position: 'absolute',
-          bottom: '24px',
+          bottom: '20px',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: '8px',
+          gap: '4px',
         }}>
-          <span style={{ fontSize: '20px' }}>🔥</span>
           <span style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.3)',
-            letterSpacing: '1px',
+            fontSize: '13px',
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '0.5px',
           }}>
-            amicooked.com
+            See how financially cooked you are
           </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '18px' }}>🔥</span>
+            <span style={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '1px',
+            }}>
+              amicooked.com
+            </span>
+          </div>
         </div>
       </div>
     );
