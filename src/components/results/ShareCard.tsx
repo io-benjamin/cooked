@@ -12,19 +12,20 @@ interface ShareCardProps {
   totalUsers?: number;
 }
 
-const TIER_INFO: Record<string, { name: string; emoji: string; color: string }> = {
-  'raw': { name: 'RAW', emoji: '🥶', color: '#22d3ee' },
-  'medium-rare': { name: 'LIGHT SIZZLE', emoji: '🍳', color: '#4ade80' },
-  'medium': { name: 'SIMMERING', emoji: '🥘', color: '#facc15' },
-  'well-done': { name: 'SAUTÉED', emoji: '🔥', color: '#fb923c' },
-  'charcoal': { name: 'WELL DONE', emoji: '☠️', color: '#f87171' },
-  'ash': { name: 'CHARRED', emoji: '💀', color: '#a1a1aa' },
+const TIER_INFO: Record<string, { name: string; emoji: string; color: string; bgColor: string }> = {
+  'raw': { name: 'RAW', emoji: '🥩', color: '#4ade80', bgColor: '#166534' },
+  'medium-rare': { name: 'MEDIUM RARE', emoji: '🥩', color: '#84cc16', bgColor: '#3f6212' },
+  'medium': { name: 'MEDIUM', emoji: '🍖', color: '#facc15', bgColor: '#854d0e' },
+  'well-done': { name: 'WELL DONE', emoji: '🍖', color: '#fb923c', bgColor: '#9a3412' },
+  'charcoal': { name: 'CHARCOAL', emoji: '🥓', color: '#f87171', bgColor: '#991b1b' },
+  'ash': { name: 'CHARRED', emoji: '🖤', color: '#a1a1aa', bgColor: '#3f3f46' },
 };
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  ({ result, avatarUrl, userCity, userAge = 25, userRank = 3482, totalUsers = 9120 }, ref) => {
+  ({ result, avatarUrl, userCity }, ref) => {
     const tier = TIER_INFO[result.tier] || TIER_INFO['medium'];
-    const burnLevel = result.score / 100;
+    void avatarUrl; // Using steak emoji instead of avatar
+    void userCity;
 
     return (
       <div
@@ -32,27 +33,23 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         style={{
           width: '600px',
           height: '600px',
-          background: '#0a0a0a',
+          background: '#111111',
           fontFamily: 'system-ui, -apple-system, sans-serif',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        {/* Background glow */}
+        {/* Grid background */}
         <div
           style={{
             position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '400px',
-            height: '400px',
-            background: `radial-gradient(ellipse at center, ${tier.color}25 0%, transparent 70%)`,
-            filter: 'blur(60px)',
+            inset: 0,
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
           }}
         />
 
-        {/* Content container */}
+        {/* Content */}
         <div style={{
           position: 'relative',
           height: '100%',
@@ -63,125 +60,74 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           padding: '40px',
         }}>
           
-          {/* Avatar with flames */}
-          <div style={{ position: 'relative', marginBottom: '24px' }}>
-            {/* Flames */}
-            <div style={{
-              position: 'absolute',
-              bottom: '-16px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              fontSize: '40px',
-              opacity: 0.8,
-            }}>
-              🔥🔥🔥
+          {/* Big colored circle */}
+          <div style={{
+            width: '320px',
+            height: '320px',
+            borderRadius: '50%',
+            background: `radial-gradient(circle at 30% 30%, ${tier.bgColor} 0%, ${tier.bgColor}90 100%)`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: `0 0 80px ${tier.color}30`,
+            position: 'relative',
+          }}>
+            {/* Steak/meat emoji */}
+            <div style={{ fontSize: '80px', marginBottom: '8px' }}>
+              {tier.emoji}
             </div>
             
-            {/* Avatar */}
+            {/* Score */}
             <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              border: `3px solid ${tier.color}`,
-              boxShadow: `0 0 30px ${tier.color}50`,
+              fontSize: '100px',
+              fontWeight: 900,
+              color: tier.color,
+              lineHeight: 0.9,
+              marginTop: '-10px',
             }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src={avatarUrl} 
-                alt="" 
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  filter: `brightness(${1 - burnLevel * 0.25}) sepia(${burnLevel * 0.3})`,
-                }}
-              />
+              {result.score}%
             </div>
             
-            {/* Expression */}
+            {/* Tier name */}
             <div style={{
-              position: 'absolute',
-              bottom: '-4px',
-              right: '-8px',
-              fontSize: '32px',
-            }}>
-              {result.score > 80 ? '💀' : result.score > 60 ? '😵' : result.score > 40 ? '😰' : result.score > 20 ? '😅' : '😎'}
-            </div>
-          </div>
-
-          {/* "I am" text */}
-          <div style={{
-            fontSize: '18px',
-            color: 'rgba(255,255,255,0.5)',
-            marginBottom: '8px',
-            letterSpacing: '2px',
-          }}>
-            I AM
-          </div>
-
-          {/* Score */}
-          <div style={{
-            fontSize: '120px',
-            fontWeight: 900,
-            color: tier.color,
-            lineHeight: 0.9,
-            textShadow: `0 0 80px ${tier.color}50`,
-          }}>
-            {result.score}%
-          </div>
-
-          {/* Tier */}
-          <div style={{
-            fontSize: '32px',
-            fontWeight: 800,
-            color: tier.color,
-            letterSpacing: '4px',
-            marginTop: '4px',
-          }}>
-            {tier.emoji} {tier.name}
-          </div>
-
-          {/* Ranking */}
-          <div style={{
-            marginTop: '24px',
-            padding: '12px 24px',
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}>
-            <div style={{
-              fontSize: '16px',
-              color: 'rgba(255,255,255,0.7)',
-              textAlign: 'center',
-            }}>
-              <span style={{ fontWeight: 700, color: '#fff' }}>#{userRank.toLocaleString()}</span>
-              <span style={{ color: 'rgba(255,255,255,0.4)' }}> of {totalUsers.toLocaleString()}</span>
-            </div>
-            <div style={{
-              fontSize: '14px',
-              color: 'rgba(255,255,255,0.4)',
-              textAlign: 'center',
+              fontSize: '28px',
+              fontWeight: 800,
+              color: tier.color,
+              letterSpacing: '4px',
               marginTop: '4px',
             }}>
-              {userCity} • Age {userAge}
+              {tier.name}
             </div>
+          </div>
+
+          {/* Roast */}
+          <div style={{
+            marginTop: '32px',
+            fontSize: '18px',
+            color: 'rgba(255,255,255,0.5)',
+            textAlign: 'center',
+            fontStyle: 'italic',
+            maxWidth: '450px',
+            lineHeight: 1.4,
+          }}>
+            &ldquo;{result.roast}&rdquo;
           </div>
 
           {/* Footer */}
           <div style={{
             position: 'absolute',
-            bottom: '24px',
+            bottom: '32px',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
           }}>
-            <span style={{ fontSize: '20px' }}>🔥</span>
+            <span style={{ fontSize: '24px' }}>🔥</span>
             <span style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.4)',
-              letterSpacing: '1px',
+              fontSize: '20px',
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '0.5px',
             }}>
               amicooked.com
             </span>
