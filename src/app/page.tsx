@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { CalculatorForm } from '@/components/calculator/CalculatorForm';
 import { CookedMeter } from '@/components/results/CookedMeter';
-import { AvatarBuilder, AvatarConfig } from '@/components/avatar/AvatarBuilder';
+import { AvatarPicker } from '@/components/avatar/AvatarPicker';
 import { calculateCookedScore } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
@@ -14,11 +14,11 @@ export default function Home() {
   const [step, setStep] = useState<Step>('home');
   const [result, setResult] = useState<CookedResult | null>(null);
   const [userInputs, setUserInputs] = useState<UserInputs | null>(null);
-  const [avatar, setAvatar] = useState<AvatarConfig | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAvatarComplete = (config: AvatarConfig) => {
-    setAvatar(config);
+  const handleAvatarComplete = (url: string) => {
+    setAvatarUrl(url);
     setStep('calculator');
   };
 
@@ -35,7 +35,7 @@ export default function Home() {
   const handleReset = () => {
     setResult(null);
     setUserInputs(null);
-    setAvatar(null);
+    setAvatarUrl(null);
     setStep('home');
   };
 
@@ -154,13 +154,9 @@ export default function Home() {
         )}
 
         {step === 'avatar' && (
-          /* Avatar Builder */
+          /* Avatar Picker */
           <div className="py-8 animate-slide-up">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">Create Your Character</h2>
-              <p className="text-white/50">This is you. Customize wisely... you&apos;re about to get cooked 🔥</p>
-            </div>
-            <AvatarBuilder onComplete={handleAvatarComplete} />
+            <AvatarPicker onComplete={handleAvatarComplete} />
           </div>
         )}
 
@@ -175,14 +171,14 @@ export default function Home() {
           </div>
         )}
 
-        {step === 'results' && result && avatar && (
+        {step === 'results' && result && avatarUrl && (
           <div className="space-y-6 animate-slide-up">
             <CookedMeter 
               result={result} 
               userCity={userInputs?.city || 'Unknown'}
               userAge={userInputs?.age || 25}
               userIndustry={userInputs?.industry?.split(' / ')[0] || 'Unknown'}
-              avatar={avatar}
+              avatarUrl={avatarUrl}
             />
             
             {/* Action buttons */}

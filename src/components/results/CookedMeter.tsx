@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { CookedResult } from '@/types/calculator';
-import { AvatarPreview, AvatarConfig } from '@/components/avatar/AvatarBuilder';
 
 interface CookedMeterProps {
   result: CookedResult;
   userCity: string;
   userAge: number;
   userIndustry: string;
-  avatar: AvatarConfig;
+  avatarUrl: string;
 }
 
 const TIERS = [
@@ -25,7 +24,7 @@ function getTier(score: number) {
   return TIERS.find(t => score <= t.max) || TIERS[TIERS.length - 1];
 }
 
-export function CookedMeter({ result, userCity, userAge, userIndustry, avatar }: CookedMeterProps) {
+export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const tier = getTier(result.score);
@@ -134,11 +133,62 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatar }:
               transform: `scale(${1 + flameIntensity * 0.15})`,
             }}
           >
-            <AvatarPreview 
-              config={avatar} 
-              size={140} 
-              burnLevel={animatedScore} 
-            />
+            {/* Avatar with burn effects */}
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={avatarUrl} 
+                alt="Your avatar" 
+                className="w-36 h-36 rounded-2xl object-cover"
+                style={{
+                  filter: `brightness(${1 - flameIntensity * 0.4}) saturate(${1 - flameIntensity * 0.3}) sepia(${flameIntensity * 0.5})`,
+                }}
+              />
+              {/* Burn overlay */}
+              <div 
+                className="absolute inset-0 rounded-2xl pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse at center, transparent 30%, rgba(139, 69, 19, ${flameIntensity * 0.5}) 100%)`,
+                  mixBlendMode: 'multiply',
+                }}
+              />
+              {/* Char marks for high scores */}
+              {result.score > 60 && (
+                <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+                  <div 
+                    className="absolute top-2 left-3 w-4 h-2 rounded-full"
+                    style={{ background: `rgba(0,0,0,${(result.score - 60) / 100})` }}
+                  />
+                  <div 
+                    className="absolute bottom-4 right-2 w-3 h-3 rounded-full"
+                    style={{ background: `rgba(0,0,0,${(result.score - 60) / 100 * 0.7})` }}
+                  />
+                  <div 
+                    className="absolute top-8 right-4 w-2 h-4 rounded-full"
+                    style={{ background: `rgba(0,0,0,${(result.score - 60) / 100 * 0.5})` }}
+                  />
+                </div>
+              )}
+              {/* Sweat drops */}
+              {result.score > 30 && result.score < 80 && (
+                <div 
+                  className="absolute -right-2 top-2 text-xl animate-bounce"
+                  style={{ animationDelay: '0.3s' }}
+                >
+                  💧
+                </div>
+              )}
+              {/* Smoke for high scores */}
+              {result.score > 70 && (
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-2xl animate-float opacity-70">
+                  💨
+                </div>
+              )}
+              {/* Expression overlay */}
+              <div className="absolute bottom-1 right-1 text-2xl">
+                {result.score > 80 ? '💀' : result.score > 60 ? '😵' : result.score > 40 ? '😰' : result.score > 20 ? '😅' : '😎'}
+              </div>
+            </div>
           </div>
         </div>
 
