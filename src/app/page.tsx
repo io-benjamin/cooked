@@ -4,14 +4,23 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { CalculatorForm } from '@/components/calculator/CalculatorForm';
 import { CookedMeter } from '@/components/results/CookedMeter';
+import { AvatarBuilder, AvatarConfig } from '@/components/avatar/AvatarBuilder';
 import { calculateCookedScore } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
+type Step = 'home' | 'avatar' | 'calculator' | 'results';
+
 export default function Home() {
+  const [step, setStep] = useState<Step>('home');
   const [result, setResult] = useState<CookedResult | null>(null);
   const [userInputs, setUserInputs] = useState<UserInputs | null>(null);
+  const [avatar, setAvatar] = useState<AvatarConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCalculator, setShowCalculator] = useState(false);
+
+  const handleAvatarComplete = (config: AvatarConfig) => {
+    setAvatar(config);
+    setStep('calculator');
+  };
 
   const handleSubmit = async (inputs: UserInputs) => {
     setIsLoading(true);
@@ -19,13 +28,15 @@ export default function Home() {
     await new Promise(resolve => setTimeout(resolve, 2000));
     const calculatedResult = calculateCookedScore(inputs);
     setResult(calculatedResult);
+    setStep('results');
     setIsLoading(false);
   };
 
   const handleReset = () => {
     setResult(null);
     setUserInputs(null);
-    setShowCalculator(false);
+    setAvatar(null);
+    setStep('home');
   };
 
   return (
@@ -60,104 +71,118 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="relative z-10 container mx-auto px-4 py-8">
-        {!result ? (
-          !showCalculator ? (
-            /* Hero Section */
-            <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
-              <div className="space-y-8 max-w-3xl mx-auto">
-                {/* Main headline */}
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm text-white/70">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                    </span>
-                    14,293 people checked today
-                  </div>
-                  
-                  <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight">
-                    are you financially
-                    <br />
-                    <span className="gradient-text">cooked?</span>
-                  </h1>
-                  
-                  <p className="text-xl sm:text-2xl text-white/50 max-w-xl mx-auto leading-relaxed">
-                    Find out where you stand compared to others your age, in your city, and in your field.
-                  </p>
+        {step === 'home' && (
+          /* Hero Section */
+          <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
+            <div className="space-y-8 max-w-3xl mx-auto">
+              {/* Main headline */}
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm text-white/70">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                  </span>
+                  14,293 people checked today
                 </div>
+                
+                <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight">
+                  are you financially
+                  <br />
+                  <span className="gradient-text">cooked?</span>
+                </h1>
+                
+                <p className="text-xl sm:text-2xl text-white/50 max-w-xl mx-auto leading-relaxed">
+                  Create your character. Enter your stats. Watch yourself get roasted.
+                </p>
+              </div>
 
-                {/* CTA Button */}
-                <div className="pt-4">
-                  <button
-                    onClick={() => setShowCalculator(true)}
-                    className="group relative px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 animate-pulse-glow"
-                  >
-                    <span className="relative z-10 flex items-center gap-2">
-                      Find Out Now
-                      <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </span>
-                  </button>
+              {/* CTA Button */}
+              <div className="pt-4">
+                <button
+                  onClick={() => setStep('avatar')}
+                  className="group relative px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 animate-pulse-glow"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    Create Your Character 🧑‍🍳
+                    <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              {/* Trust badges */}
+              <div className="flex flex-wrap justify-center gap-6 pt-8 text-sm text-white/40">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎨</span>
+                  <span>Custom Avatar</span>
                 </div>
-
-                {/* Trust badges */}
-                <div className="flex flex-wrap justify-center gap-6 pt-8 text-sm text-white/40">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🔒</span>
-                    <span>100% Anonymous</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">⚡</span>
-                    <span>2 minute quiz</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">📊</span>
-                    <span>Real comparisons</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🔥</span>
+                  <span>Watch it burn</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📊</span>
+                  <span>Real comparisons</span>
+                </div>
+              </div>
 
-                {/* Tier preview - Kitchen theme */}
-                <div className="pt-12">
-                  <p className="text-sm text-white/30 mb-4">The heat scale</p>
-                  <div className="flex justify-center gap-2 sm:gap-4">
-                    {[
-                      { emoji: '🥶', label: 'Raw', color: 'from-cyan-500/20 to-cyan-500/5' },
-                      { emoji: '🍳', label: 'Sizzle', color: 'from-green-500/20 to-green-500/5' },
-                      { emoji: '🥘', label: 'Simmer', color: 'from-yellow-500/20 to-yellow-500/5' },
-                      { emoji: '🔥', label: 'Sautéed', color: 'from-orange-500/20 to-orange-500/5' },
-                      { emoji: '☠️', label: 'Well Done', color: 'from-red-500/20 to-red-500/5' },
-                      { emoji: '💀', label: 'Charred', color: 'from-gray-500/20 to-gray-500/5' },
-                    ].map((tier, i) => (
-                      <div 
-                        key={i}
-                        className={`flex flex-col items-center gap-1 p-3 rounded-xl bg-gradient-to-b ${tier.color} border border-white/5 hover:border-white/10 transition-all hover:scale-110 cursor-default`}
-                      >
-                        <span className="text-2xl sm:text-3xl">{tier.emoji}</span>
-                        <span className="text-[10px] sm:text-xs text-white/50 hidden sm:block">{tier.label}</span>
-                      </div>
-                    ))}
-                  </div>
+              {/* Tier preview - Kitchen theme */}
+              <div className="pt-12">
+                <p className="text-sm text-white/30 mb-4">The heat scale</p>
+                <div className="flex justify-center gap-2 sm:gap-4">
+                  {[
+                    { emoji: '🥶', label: 'Raw', color: 'from-cyan-500/20 to-cyan-500/5' },
+                    { emoji: '🍳', label: 'Sizzle', color: 'from-green-500/20 to-green-500/5' },
+                    { emoji: '🥘', label: 'Simmer', color: 'from-yellow-500/20 to-yellow-500/5' },
+                    { emoji: '🔥', label: 'Sautéed', color: 'from-orange-500/20 to-orange-500/5' },
+                    { emoji: '☠️', label: 'Well Done', color: 'from-red-500/20 to-red-500/5' },
+                    { emoji: '💀', label: 'Charred', color: 'from-gray-500/20 to-gray-500/5' },
+                  ].map((tier, i) => (
+                    <div 
+                      key={i}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-xl bg-gradient-to-b ${tier.color} border border-white/5 hover:border-white/10 transition-all hover:scale-110 cursor-default`}
+                    >
+                      <span className="text-2xl sm:text-3xl">{tier.emoji}</span>
+                      <span className="text-[10px] sm:text-xs text-white/50 hidden sm:block">{tier.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          ) : (
-            /* Calculator */
-            <div className="py-8 animate-slide-up">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-2">Let&apos;s see how cooked you are</h2>
-                <p className="text-white/50">Answer honestly. We won&apos;t judge... much. 🔥</p>
-              </div>
-              <CalculatorForm onSubmit={handleSubmit} isLoading={isLoading} />
+          </div>
+        )}
+
+        {step === 'avatar' && (
+          /* Avatar Builder */
+          <div className="py-8 animate-slide-up">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2">Create Your Character</h2>
+              <p className="text-white/50">This is you. Customize wisely... you&apos;re about to get cooked 🔥</p>
             </div>
-          )
-        ) : (
-          <div className="space-y-6">
+            <AvatarBuilder onComplete={handleAvatarComplete} />
+          </div>
+        )}
+
+        {step === 'calculator' && (
+          /* Calculator */
+          <div className="py-8 animate-slide-up">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2">Now for the hard part</h2>
+              <p className="text-white/50">Answer honestly. We won&apos;t judge... much. 🔥</p>
+            </div>
+            <CalculatorForm onSubmit={handleSubmit} isLoading={isLoading} />
+          </div>
+        )}
+
+        {step === 'results' && result && avatar && (
+          <div className="space-y-6 animate-slide-up">
             <CookedMeter 
               result={result} 
               userCity={userInputs?.city || 'Unknown'}
               userAge={userInputs?.age || 25}
               userIndustry={userInputs?.industry?.split(' / ')[0] || 'Unknown'}
+              avatar={avatar}
             />
             
             {/* Action buttons */}
@@ -172,7 +197,7 @@ export default function Home() {
                 onClick={handleReset}
                 className="flex-1 h-14 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-lg rounded-2xl transition-all"
               >
-                Calculate Again
+                Cook Someone Else
               </button>
             </div>
           </div>

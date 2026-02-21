@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { CookedResult } from '@/types/calculator';
+import { AvatarPreview, AvatarConfig } from '@/components/avatar/AvatarBuilder';
 
 interface CookedMeterProps {
   result: CookedResult;
   userCity: string;
   userAge: number;
   userIndustry: string;
+  avatar: AvatarConfig;
 }
 
 const TIERS = [
@@ -23,7 +25,7 @@ function getTier(score: number) {
   return TIERS.find(t => score <= t.max) || TIERS[TIERS.length - 1];
 }
 
-export function CookedMeter({ result, userCity, userAge, userIndustry }: CookedMeterProps) {
+export function CookedMeter({ result, userCity, userAge, userIndustry, avatar }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const tier = getTier(result.score);
@@ -126,31 +128,17 @@ export function CookedMeter({ result, userCity, userAge, userIndustry }: CookedM
 
         {/* Character/Avatar */}
         <div className="absolute bottom-28 left-1/2 -translate-x-1/2 text-center">
-          {/* Simple avatar representation */}
           <div 
-            className="relative transition-transform duration-300"
+            className="relative transition-transform duration-1000"
             style={{ 
-              transform: `scale(${1 + flameIntensity * 0.1})`,
-              filter: `brightness(${1 - flameIntensity * 0.3})` 
+              transform: `scale(${1 + flameIntensity * 0.15})`,
             }}
           >
-            {/* Avatar body */}
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-b from-amber-200 to-amber-300 border-4 border-amber-400 flex items-center justify-center text-5xl shadow-lg">
-              {result.score > 80 ? '😵' : result.score > 60 ? '😰' : result.score > 40 ? '😅' : result.score > 20 ? '😌' : '😎'}
-            </div>
-            {/* Sweat drops for high scores */}
-            {result.score > 50 && (
-              <>
-                <div className="absolute -right-2 top-4 text-2xl animate-bounce" style={{ animationDelay: '0.2s' }}>💧</div>
-                {result.score > 70 && (
-                  <div className="absolute -left-2 top-6 text-xl animate-bounce" style={{ animationDelay: '0.5s' }}>💧</div>
-                )}
-              </>
-            )}
-            {/* Smoke for very high scores */}
-            {result.score > 75 && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-3xl animate-float opacity-60">💨</div>
-            )}
+            <AvatarPreview 
+              config={avatar} 
+              size={140} 
+              burnLevel={animatedScore} 
+            />
           </div>
         </div>
 
