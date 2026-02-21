@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import { CookedResult } from '@/types/calculator';
 import { Button } from '@/components/ui/button';
 import { getTierLabel } from '@/lib/scoring';
+import { ShareCard } from './ShareCard';
 
 interface ResultsCardProps {
   result: CookedResult;
@@ -13,6 +15,8 @@ interface ResultsCardProps {
 export function ResultsCard({ result, onReset }: ResultsCardProps) {
   const [showScore, setShowScore] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Trigger animations
@@ -48,9 +52,64 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
 
   const colors = tierColors[result.tier];
 
+  const generateImage = async (): Promise<Blob | null> => {
+    if (!shareCardRef.current) return null;
+    
+    const canvas = await html2canvas(shareCardRef.current, {
+      backgroundColor: '#0a0a0a',
+      scale: 2,
+      logging: false,
+    });
+    
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
+    });
+  };
+
+  const handleDownload = async () => {
+    setIsGenerating(true);
+    try {
+      const blob = await generateImage();
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cooked-${result.score}percent.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleShare = async () => {
     const text = `I'm ${result.score}% cooked ${result.emoji}\n\n"${result.roast}"\n\nFind out if you're cooked: amicooked.com`;
     
+    // Try to share with image
+    if (navigator.share && navigator.canShare) {
+      setIsGenerating(true);
+      try {
+        const blob = await generateImage();
+        if (blob) {
+          const file = new File([blob], 'cooked.png', { type: 'image/png' });
+          const shareData = { text, files: [file] };
+          
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            return;
+          }
+        }
+      } catch (e) {
+        // Fall back to text only
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+    
+    // Fallback: share text only
     if (navigator.share) {
       try {
         await navigator.share({ text });
@@ -179,28 +238,41 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
       <div className={`flex flex-col sm:flex-row gap-4 ${showScore ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: '1.6s' }}>
         <Button 
           onClick={handleShare}
-          className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl"
+          disabled={isGenerating}
+          className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl disabled:opacity-50"
         >
-          Share Results 🔥
+          {isGenerating ? 'Generating...' : 'Share Results 🔥'}
         </Button>
         <Button 
-          variant="outline"
-          onClick={onReset}
-          className="flex-1 h-14 bg-white/5 border-white/10 hover:bg-white/10 text-white font-semibold text-lg rounded-2xl"
+          onClick={handleDownload}
+          disabled={isGenerating}
+          className="flex-1 h-14 bg-white/10 hover:bg-white/20 text-white font-bold text-lg rounded-2xl border border-white/10 disabled:opacity-50"
         >
-          Try Again
+          {isGenerating ? '...' : 'Download Card 📸'}
         </Button>
       </div>
 
-      {/* Shareable Card Preview */}
-      <div className={`glass rounded-3xl p-6 ${showScore ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: '1.8s' }}>
-        <div className="text-sm text-white/40 mb-3">Share this card</div>
-        <div className={`bg-gradient-to-br ${colors.bg} border border-white/10 rounded-2xl p-6 text-center`}>
-          <div className="text-4xl mb-2">{result.emoji}</div>
-          <div className={`text-3xl font-black ${colors.text}`}>{result.score}% COOKED</div>
-          <div className="text-sm text-white/50 mt-1">{getTierLabel(result.tier)}</div>
-          <div className="text-xs text-white/30 mt-4">amicooked.com</div>
-        </div>
+      {/* Try Again */}
+      <div className={`${showScore ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: '1.7s' }}>
+        <Button 
+          variant="outline"
+          onClick={onReset}
+          className="w-full h-12 bg-white/5 border-white/10 hover:bg-white/10 text-white/60 hover:text-white font-semibold rounded-2xl"
+        >
+          Calculate Again
+        </Button>
+      </div>
+
+      {/* Hidden ShareCard for capture */}
+      <div 
+        style={{ 
+          position: 'absolute', 
+          left: '-9999px', 
+          top: '-9999px',
+          pointerEvents: 'none',
+        }}
+      >
+        <ShareCard ref={shareCardRef} result={result} />
       </div>
     </div>
   );
