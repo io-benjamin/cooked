@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CookedResult } from '@/types/calculator';
+import { ShareCard } from './ShareCard';
 
 interface CookedMeterProps {
   result: CookedResult;
@@ -27,7 +28,79 @@ function getTier(score: number) {
 export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
   const tier = getTier(result.score);
+
+  const generateImage = async (): Promise<Blob | null> => {
+    if (!shareCardRef.current) return null;
+    
+    const html2canvas = (await import('html2canvas')).default;
+    const canvas = await html2canvas(shareCardRef.current, {
+      backgroundColor: '#0a0a0a',
+      scale: 2,
+      logging: false,
+      useCORS: true,
+    });
+    
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
+    });
+  };
+
+  const handleDownload = async () => {
+    setIsGenerating(true);
+    try {
+      const blob = await generateImage();
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cooked-${result.score}percent.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const text = `I'm ${result.score}% cooked 🔥\n\n"${result.roast}"\n\nFind out if you're cooked: amicooked.com`;
+    
+    if (navigator.share && navigator.canShare) {
+      setIsGenerating(true);
+      try {
+        const blob = await generateImage();
+        if (blob) {
+          const file = new File([blob], 'cooked.png', { type: 'image/png' });
+          const shareData = { text, files: [file] };
+          
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            return;
+          }
+        }
+      } catch {
+        // Fall back to text only
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+    
+    // Fallback: share text only or copy
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch {
+        // User cancelled
+      }
+    } else {
+      navigator.clipboard.writeText(text);
+    }
+  };
   
   // Flame intensity based on score (0-1)
   const flameIntensity = result.score / 100;
@@ -256,6 +329,41 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
           <span>🥶 Raw</span>
           <span>💀 Charred</span>
         </div>
+      </div>
+
+      {/* Share Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 mt-6">
+        <button
+          onClick={handleShare}
+          disabled={isGenerating}
+          className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all disabled:opacity-50"
+        >
+          {isGenerating ? 'Generating...' : 'Share Results 🔥'}
+        </button>
+        <button
+          onClick={handleDownload}
+          disabled={isGenerating}
+          className="flex-1 h-14 bg-white/10 hover:bg-white/20 text-white font-bold text-lg rounded-2xl border border-white/10 transition-all disabled:opacity-50"
+        >
+          {isGenerating ? '...' : 'Download Card 📸'}
+        </button>
+      </div>
+
+      {/* Hidden ShareCard for capture */}
+      <div 
+        style={{ 
+          position: 'absolute', 
+          left: '-9999px', 
+          top: '-9999px',
+          pointerEvents: 'none',
+        }}
+      >
+        <ShareCard 
+          ref={shareCardRef} 
+          result={result} 
+          avatarUrl={avatarUrl}
+          userCity={userCity}
+        />
       </div>
     </div>
   );

@@ -181,17 +181,11 @@ export default function Home() {
               avatarUrl={avatarUrl}
             />
             
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto">
-              <button
-                onClick={() => {/* TODO: share */}}
-                className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all"
-              >
-                Share Results 🔥
-              </button>
+            {/* Reset button */}
+            <div className="max-w-2xl mx-auto">
               <button
                 onClick={handleReset}
-                className="flex-1 h-14 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-lg rounded-2xl transition-all"
+                className="w-full h-12 bg-white/5 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white font-semibold rounded-2xl transition-all"
               >
                 Cook Someone Else
               </button>

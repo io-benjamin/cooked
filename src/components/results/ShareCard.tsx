@@ -2,25 +2,27 @@
 
 import { forwardRef } from 'react';
 import { CookedResult } from '@/types/calculator';
-import { getTierLabel } from '@/lib/scoring';
 
 interface ShareCardProps {
   result: CookedResult;
+  avatarUrl: string;
+  userCity: string;
 }
+
+const TIER_INFO: Record<string, { name: string; color: string }> = {
+  'raw': { name: 'RAW', color: '#22d3ee' },
+  'medium-rare': { name: 'LIGHT SIZZLE', color: '#4ade80' },
+  'medium': { name: 'SIMMERING', color: '#facc15' },
+  'well-done': { name: 'SAUTÉED', color: '#fb923c' },
+  'charcoal': { name: 'WELL DONE', color: '#f87171' },
+  'ash': { name: 'CHARRED', color: '#a1a1aa' },
+};
 
 // This is the card that gets converted to an image
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  ({ result }, ref) => {
-    const tierColors: Record<string, { text: string; gradient: string }> = {
-      'raw': { text: '#4ade80', gradient: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' },
-      'medium-rare': { text: '#a3e635', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)' },
-      'medium': { text: '#facc15', gradient: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)' },
-      'well-done': { text: '#fb923c', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' },
-      'charcoal': { text: '#f87171', gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' },
-      'ash': { text: '#9ca3af', gradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)' },
-    };
-
-    const colors = tierColors[result.tier];
+  ({ result, avatarUrl, userCity }, ref) => {
+    const tier = TIER_INFO[result.tier] || TIER_INFO['medium'];
+    const burnLevel = result.score / 100;
 
     return (
       <div
@@ -28,12 +30,11 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         style={{
           width: '600px',
           height: '600px',
-          background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%)',
+          background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%)',
           padding: '40px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
           fontFamily: 'system-ui, -apple-system, sans-serif',
           position: 'relative',
           overflow: 'hidden',
@@ -44,94 +45,161 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
+            backgroundSize: '30px 30px',
           }}
         />
-        
-        {/* Glow effect */}
+
+        {/* Fire glow at bottom */}
         <div
           style={{
             position: 'absolute',
-            top: '50%',
+            bottom: '-100px',
             left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '400px',
-            height: '400px',
-            background: colors.gradient,
-            filter: 'blur(100px)',
-            opacity: 0.3,
-            borderRadius: '50%',
+            transform: 'translateX(-50%)',
+            width: '500px',
+            height: '300px',
+            background: `radial-gradient(ellipse at center, ${tier.color}40 0%, transparent 70%)`,
+            filter: 'blur(40px)',
           }}
         />
 
-        {/* Content */}
-        <div style={{ position: 'relative', textAlign: 'center' }}>
-          {/* Emoji */}
-          <div style={{ fontSize: '100px', marginBottom: '16px' }}>
-            {result.emoji}
-          </div>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px',
+          marginBottom: '20px',
+          position: 'relative',
+        }}>
+          <span style={{ fontSize: '24px' }}>🔥</span>
+          <span style={{ 
+            fontSize: '18px', 
+            fontWeight: 700, 
+            color: 'rgba(255,255,255,0.5)',
+            letterSpacing: '2px',
+          }}>
+            AM I COOKED?
+          </span>
+        </div>
 
-          {/* Score */}
-          <div
-            style={{
-              fontSize: '120px',
-              fontWeight: 900,
-              color: colors.text,
-              lineHeight: 1,
-              textShadow: `0 0 60px ${colors.text}40`,
-            }}
-          >
-            {result.score}%
+        {/* Avatar with burn effects */}
+        <div style={{ 
+          position: 'relative',
+          marginBottom: '20px',
+        }}>
+          {/* Flames behind avatar */}
+          <div style={{
+            position: 'absolute',
+            bottom: '-20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: '60px',
+            opacity: Math.min(burnLevel * 1.5, 1),
+          }}>
+            🔥🔥🔥
           </div>
-
-          {/* Tier */}
-          <div
-            style={{
-              fontSize: '32px',
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.7)',
-              marginTop: '8px',
-              textTransform: 'uppercase',
-              letterSpacing: '4px',
-            }}
-          >
-            {getTierLabel(result.tier)}
+          
+          {/* Avatar */}
+          <div style={{
+            width: '160px',
+            height: '160px',
+            borderRadius: '24px',
+            overflow: 'hidden',
+            border: `4px solid ${tier.color}`,
+            position: 'relative',
+            boxShadow: `0 0 40px ${tier.color}40`,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={avatarUrl} 
+              alt="" 
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                filter: `brightness(${1 - burnLevel * 0.3}) sepia(${burnLevel * 0.4})`,
+              }}
+            />
+            {/* Burn overlay */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: `radial-gradient(ellipse at center, transparent 40%, rgba(139, 69, 19, ${burnLevel * 0.4}) 100%)`,
+            }} />
           </div>
-
-          {/* Roast */}
-          <div
-            style={{
-              fontSize: '18px',
-              color: 'rgba(255,255,255,0.5)',
-              marginTop: '24px',
-              maxWidth: '400px',
-              fontStyle: 'italic',
-            }}
-          >
-            &ldquo;{result.roast}&rdquo;
+          
+          {/* Expression */}
+          <div style={{
+            position: 'absolute',
+            bottom: '0',
+            right: '-10px',
+            fontSize: '40px',
+          }}>
+            {result.score > 80 ? '💀' : result.score > 60 ? '😵' : result.score > 40 ? '😰' : result.score > 20 ? '😅' : '😎'}
           </div>
         </div>
 
+        {/* Score */}
+        <div style={{
+          fontSize: '100px',
+          fontWeight: 900,
+          color: tier.color,
+          lineHeight: 1,
+          textShadow: `0 0 60px ${tier.color}60`,
+          position: 'relative',
+        }}>
+          {result.score}%
+        </div>
+
+        {/* Tier name */}
+        <div style={{
+          fontSize: '28px',
+          fontWeight: 800,
+          color: tier.color,
+          marginTop: '4px',
+          letterSpacing: '6px',
+          textShadow: `0 0 20px ${tier.color}40`,
+        }}>
+          {tier.name}
+        </div>
+
+        {/* Location */}
+        <div style={{
+          fontSize: '16px',
+          color: 'rgba(255,255,255,0.5)',
+          marginTop: '16px',
+        }}>
+          in {userCity}
+        </div>
+
+        {/* Roast */}
+        <div style={{
+          fontSize: '16px',
+          color: 'rgba(255,255,255,0.4)',
+          marginTop: '12px',
+          maxWidth: '400px',
+          textAlign: 'center',
+          fontStyle: 'italic',
+        }}>
+          &ldquo;{result.roast}&rdquo;
+        </div>
+
         {/* Footer */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <span style={{ fontSize: '28px' }}>🔥</span>
-          <span
-            style={{
-              fontSize: '20px',
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.4)',
-              letterSpacing: '1px',
-            }}
-          >
+        <div style={{
+          position: 'absolute',
+          bottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+          <span style={{ fontSize: '20px' }}>🔥</span>
+          <span style={{
+            fontSize: '16px',
+            fontWeight: 700,
+            color: 'rgba(255,255,255,0.3)',
+            letterSpacing: '1px',
+          }}>
             amicooked.com
           </span>
         </div>
