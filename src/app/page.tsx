@@ -3,17 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { CalculatorForm } from '@/components/calculator/CalculatorForm';
-import { ResultsCard } from '@/components/results/ResultsCard';
+import { CookedMeter } from '@/components/results/CookedMeter';
 import { calculateCookedScore } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
 export default function Home() {
   const [result, setResult] = useState<CookedResult | null>(null);
+  const [userInputs, setUserInputs] = useState<UserInputs | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
 
   const handleSubmit = async (inputs: UserInputs) => {
     setIsLoading(true);
+    setUserInputs(inputs);
     await new Promise(resolve => setTimeout(resolve, 2000));
     const calculatedResult = calculateCookedScore(inputs);
     setResult(calculatedResult);
@@ -22,6 +24,7 @@ export default function Home() {
 
   const handleReset = () => {
     setResult(null);
+    setUserInputs(null);
     setShowCalculator(false);
   };
 
@@ -114,17 +117,17 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Tier preview */}
+                {/* Tier preview - Kitchen theme */}
                 <div className="pt-12">
-                  <p className="text-sm text-white/30 mb-4">The cooked-ness scale</p>
+                  <p className="text-sm text-white/30 mb-4">The heat scale</p>
                   <div className="flex justify-center gap-2 sm:gap-4">
                     {[
-                      { emoji: '🥩', label: 'Raw', color: 'from-green-500/20 to-green-500/5' },
-                      { emoji: '🍖', label: 'Medium Rare', color: 'from-lime-500/20 to-lime-500/5' },
-                      { emoji: '🥓', label: 'Medium', color: 'from-yellow-500/20 to-yellow-500/5' },
-                      { emoji: '🔥', label: 'Well Done', color: 'from-orange-500/20 to-orange-500/5' },
-                      { emoji: '🖤', label: 'Charcoal', color: 'from-red-500/20 to-red-500/5' },
-                      { emoji: '💀', label: 'Ash', color: 'from-gray-500/20 to-gray-500/5' },
+                      { emoji: '🥶', label: 'Raw', color: 'from-cyan-500/20 to-cyan-500/5' },
+                      { emoji: '🍳', label: 'Sizzle', color: 'from-green-500/20 to-green-500/5' },
+                      { emoji: '🥘', label: 'Simmer', color: 'from-yellow-500/20 to-yellow-500/5' },
+                      { emoji: '🔥', label: 'Sautéed', color: 'from-orange-500/20 to-orange-500/5' },
+                      { emoji: '☠️', label: 'Well Done', color: 'from-red-500/20 to-red-500/5' },
+                      { emoji: '💀', label: 'Charred', color: 'from-gray-500/20 to-gray-500/5' },
                     ].map((tier, i) => (
                       <div 
                         key={i}
@@ -149,7 +152,30 @@ export default function Home() {
             </div>
           )
         ) : (
-          <ResultsCard result={result} onReset={handleReset} />
+          <div className="space-y-6">
+            <CookedMeter 
+              result={result} 
+              userCity={userInputs?.city || 'Unknown'}
+              userAge={userInputs?.age || 25}
+              userIndustry={userInputs?.industry?.split(' / ')[0] || 'Unknown'}
+            />
+            
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto">
+              <button
+                onClick={() => {/* TODO: share */}}
+                className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all"
+              >
+                Share Results 🔥
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex-1 h-14 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold text-lg rounded-2xl transition-all"
+              >
+                Calculate Again
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
