@@ -5,26 +5,26 @@ import Link from 'next/link';
 
 // Mock data for now - will be replaced with Supabase
 const MOCK_DATA = [
-  { id: 1, age: 24, city: 'New York, NY', industry: 'Food Service / Restaurant', score: 94, tier: 'ash', reason: '72% of income goes to a shoebox apartment' },
-  { id: 2, age: 26, city: 'San Francisco, CA', industry: 'Tech / Software', score: 89, tier: 'charcoal', reason: '$180k salary but still has roommates' },
-  { id: 3, age: 31, city: 'Los Angeles, CA', industry: 'Media / Entertainment', score: 87, tier: 'charcoal', reason: 'Owns more cameras than savings accounts' },
-  { id: 4, age: 23, city: 'Miami, FL', industry: 'Hospitality / Hotel', score: 85, tier: 'charcoal', reason: 'Credit card debt from "networking events"' },
-  { id: 5, age: 28, city: 'Austin, TX', industry: 'Retail / Customer Service', score: 82, tier: 'well-done', reason: 'Moved for tech jobs, works at Target' },
-  { id: 6, age: 35, city: 'Chicago, IL', industry: 'Healthcare / Nursing', score: 78, tier: 'well-done', reason: 'Saves lives but not money' },
-  { id: 7, age: 22, city: 'Denver, CO', industry: 'Student', score: 76, tier: 'well-done', reason: '$87k in loans for a philosophy degree' },
-  { id: 8, age: 29, city: 'Seattle, WA', industry: 'Construction / Carpentry', score: 72, tier: 'well-done', reason: 'Builds houses, can\'t afford one' },
-  { id: 9, age: 27, city: 'Phoenix, AZ', industry: 'Trucking / Delivery', score: 68, tier: 'medium', reason: 'Gas prices ate the emergency fund' },
-  { id: 10, age: 33, city: 'Atlanta, GA', industry: 'Administrative / Office', score: 65, tier: 'medium', reason: 'Same salary since 2019' },
-  { id: 11, age: 25, city: 'Houston, TX', industry: 'Warehouse / Logistics', score: 61, tier: 'medium', reason: 'Amazon Prime membership > retirement' },
-  { id: 12, age: 30, city: 'Dallas, TX', industry: 'Automotive / Mechanic', score: 58, tier: 'medium', reason: 'Fixes cars, drives a beater' },
-  { id: 13, age: 34, city: 'Philadelphia, PA', industry: 'Teaching / Education', score: 52, tier: 'medium', reason: 'Master\'s degree, Chipotle budget' },
-  { id: 14, age: 28, city: 'San Antonio, TX', industry: 'Government / Public Sector', score: 45, tier: 'medium-rare', reason: 'Job security, no salary growth' },
-  { id: 15, age: 32, city: 'Small Town / Rural', industry: 'Agriculture / Farming', score: 38, tier: 'medium-rare', reason: 'Owns land but it\'s all debt' },
-  { id: 16, age: 40, city: 'Columbus, OH', industry: 'Manufacturing / Factory', score: 32, tier: 'medium-rare', reason: 'Union wages + low rent = surviving' },
-  { id: 17, age: 36, city: 'Indianapolis, IN', industry: 'Electrician / Plumbing', score: 28, tier: 'medium-rare', reason: 'Trade school was the move' },
-  { id: 18, age: 45, city: 'Kansas City, MO', industry: 'Self-Employed / Small Business', score: 22, tier: 'medium-rare', reason: 'Bet on themselves and won' },
-  { id: 19, age: 38, city: 'Detroit, MI', industry: 'Finance / Banking', score: 18, tier: 'raw', reason: 'Knows all the loopholes' },
-  { id: 20, age: 42, city: 'Pittsburgh, PA', industry: 'Consulting', score: 12, tier: 'raw', reason: '$400/hr to tell others they\'re cooked' },
+  { id: 1, age: 24, city: 'New York, NY', industry: 'Food Service', score: 94, tier: 'ash', dti: 78, rentBurden: 72, savingsRate: -5, netWorth: -34000 },
+  { id: 2, age: 26, city: 'San Francisco, CA', industry: 'Tech', score: 89, tier: 'charcoal', dti: 65, rentBurden: 58, savingsRate: 2, netWorth: -89000 },
+  { id: 3, age: 31, city: 'Los Angeles, CA', industry: 'Entertainment', score: 87, tier: 'charcoal', dti: 61, rentBurden: 52, savingsRate: 0, netWorth: -45000 },
+  { id: 4, age: 23, city: 'Miami, FL', industry: 'Hospitality', score: 85, tier: 'charcoal', dti: 58, rentBurden: 48, savingsRate: -3, netWorth: -28000 },
+  { id: 5, age: 28, city: 'Austin, TX', industry: 'Retail', score: 82, tier: 'well-done', dti: 52, rentBurden: 45, savingsRate: 3, netWorth: -18000 },
+  { id: 6, age: 35, city: 'Chicago, IL', industry: 'Healthcare', score: 78, tier: 'well-done', dti: 48, rentBurden: 38, savingsRate: 5, netWorth: -52000 },
+  { id: 7, age: 22, city: 'Denver, CO', industry: 'Student', score: 76, tier: 'well-done', dti: 0, rentBurden: 35, savingsRate: 0, netWorth: -87000 },
+  { id: 8, age: 29, city: 'Seattle, WA', industry: 'Construction', score: 72, tier: 'well-done', dti: 42, rentBurden: 40, savingsRate: 6, netWorth: -22000 },
+  { id: 9, age: 27, city: 'Phoenix, AZ', industry: 'Trucking', score: 68, tier: 'medium', dti: 38, rentBurden: 32, savingsRate: 8, netWorth: -8000 },
+  { id: 10, age: 33, city: 'Atlanta, GA', industry: 'Admin', score: 65, tier: 'medium', dti: 35, rentBurden: 30, savingsRate: 7, netWorth: 2000 },
+  { id: 11, age: 25, city: 'Houston, TX', industry: 'Warehouse', score: 61, tier: 'medium', dti: 32, rentBurden: 28, savingsRate: 5, netWorth: -5000 },
+  { id: 12, age: 30, city: 'Dallas, TX', industry: 'Automotive', score: 58, tier: 'medium', dti: 30, rentBurden: 26, savingsRate: 10, netWorth: 8000 },
+  { id: 13, age: 34, city: 'Philadelphia, PA', industry: 'Education', score: 52, tier: 'medium', dti: 28, rentBurden: 25, savingsRate: 8, netWorth: -12000 },
+  { id: 14, age: 28, city: 'San Antonio, TX', industry: 'Government', score: 45, tier: 'medium-rare', dti: 22, rentBurden: 22, savingsRate: 12, netWorth: 15000 },
+  { id: 15, age: 32, city: 'Rural', industry: 'Agriculture', score: 38, tier: 'medium-rare', dti: 25, rentBurden: 15, savingsRate: 15, netWorth: 45000 },
+  { id: 16, age: 40, city: 'Columbus, OH', industry: 'Manufacturing', score: 32, tier: 'medium-rare', dti: 18, rentBurden: 18, savingsRate: 18, netWorth: 78000 },
+  { id: 17, age: 36, city: 'Indianapolis, IN', industry: 'Trades', score: 28, tier: 'medium-rare', dti: 15, rentBurden: 20, savingsRate: 20, netWorth: 95000 },
+  { id: 18, age: 45, city: 'Kansas City, MO', industry: 'Small Business', score: 22, tier: 'medium-rare', dti: 12, rentBurden: 12, savingsRate: 25, netWorth: 180000 },
+  { id: 19, age: 38, city: 'Detroit, MI', industry: 'Finance', score: 18, tier: 'raw', dti: 8, rentBurden: 15, savingsRate: 35, netWorth: 320000 },
+  { id: 20, age: 42, city: 'Pittsburgh, PA', industry: 'Consulting', score: 12, tier: 'raw', dti: 5, rentBurden: 10, savingsRate: 45, netWorth: 580000 },
 ];
 
 const TIER_INFO: Record<string, { emoji: string; color: string }> = {
@@ -220,24 +220,36 @@ export default function LeaderboardPage() {
                   {/* Main Content */}
                   <div className="flex-1 min-w-0">
                     {/* Score + Basic Info */}
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-3">
                       <span className="text-2xl">{tierInfo.emoji}</span>
                       <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
                       <span className="text-white/40">•</span>
-                      <span className="text-white/60">{entry.age}yo</span>
-                      <span className="text-white/40 hidden sm:inline">•</span>
-                      <span className="text-white/60 hidden sm:inline truncate">{entry.city}</span>
+                      <span className="text-white/60">{entry.age}yo in {entry.city}</span>
                     </div>
                     
-                    {/* Reason - The Star */}
-                    <div className="text-white/80 text-sm sm:text-base mb-2">
-                      &ldquo;{entry.reason}&rdquo;
+                    {/* Financial Metrics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                      <div className={`px-3 py-2 rounded-lg ${entry.dti > 40 ? 'bg-red-500/20 text-red-400' : entry.dti > 25 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                        <div className="text-lg font-bold">{entry.dti}%</div>
+                        <div className="text-[10px] opacity-70">Debt-to-Income</div>
+                      </div>
+                      <div className={`px-3 py-2 rounded-lg ${entry.rentBurden > 40 ? 'bg-red-500/20 text-red-400' : entry.rentBurden > 30 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                        <div className="text-lg font-bold">{entry.rentBurden}%</div>
+                        <div className="text-[10px] opacity-70">Rent Burden</div>
+                      </div>
+                      <div className={`px-3 py-2 rounded-lg ${entry.savingsRate < 5 ? 'bg-red-500/20 text-red-400' : entry.savingsRate < 15 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                        <div className="text-lg font-bold">{entry.savingsRate}%</div>
+                        <div className="text-[10px] opacity-70">Savings Rate</div>
+                      </div>
+                      <div className={`px-3 py-2 rounded-lg ${entry.netWorth < 0 ? 'bg-red-500/20 text-red-400' : entry.netWorth < 50000 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                        <div className="text-lg font-bold">{entry.netWorth < 0 ? '-' : ''}${Math.abs(entry.netWorth) >= 1000 ? `${Math.round(Math.abs(entry.netWorth) / 1000)}k` : Math.abs(entry.netWorth)}</div>
+                        <div className="text-[10px] opacity-70">Net Worth</div>
+                      </div>
                     </div>
                     
                     {/* Industry tag */}
                     <div className="flex flex-wrap gap-2 text-xs">
                       <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.industry}</span>
-                      <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50 sm:hidden">{entry.city}</span>
                     </div>
                   </div>
                 </div>
