@@ -102,7 +102,7 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
             return;
           }
         }
-      } catch (e) {
+      } catch {
         // Fall back to text only
       } finally {
         setIsGenerating(false);
@@ -113,7 +113,7 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
     if (navigator.share) {
       try {
         await navigator.share({ text });
-      } catch (e) {
+      } catch {
         // User cancelled
       }
     } else {
@@ -147,7 +147,7 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
           {/* Roast */}
           <div className={`max-w-md mx-auto ${showScore ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: '0.6s' }}>
             <p className="text-xl text-white/60 italic">
-              "{result.roast}"
+              &ldquo;{result.roast}&rdquo;
             </p>
           </div>
 
@@ -176,7 +176,7 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
         </div>
         <div className="glass rounded-2xl p-4 text-center">
           <div className="text-2xl font-bold text-white">{result.cityPercentile || result.percentile}%</div>
-          <div className="text-xs text-white/50">vs your city</div>
+          <div className="text-xs text-white/50">vs city</div>
         </div>
         <div className="glass rounded-2xl p-4 text-center">
           <div className="text-2xl font-bold text-white">{result.industryPercentile || result.percentile}%</div>
@@ -188,7 +188,7 @@ export function ResultsCard({ result, onReset }: ResultsCardProps) {
       {result.topIssues.length > 0 && (
         <div className={`glass rounded-3xl p-6 ${showScore ? 'animate-slide-up' : 'opacity-0'}`} style={{ animationDelay: '1.2s' }}>
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            🔥 What's Cooking You
+            🔥 What&apos;s Cooking You
           </h3>
           <div className="space-y-3">
             {result.topIssues.map((issue, i) => (

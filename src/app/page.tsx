@@ -142,8 +142,8 @@ export default function Home() {
             /* Calculator */
             <div className="py-8 animate-slide-up">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-2">Let's see how cooked you are</h2>
-                <p className="text-white/50">Answer honestly. We won't judge... much. 🔥</p>
+                <h2 className="text-3xl font-bold mb-2">Let&apos;s see how cooked you are</h2>
+                <p className="text-white/50">Answer honestly. We won&apos;t judge... much. 🔥</p>
               </div>
               <CalculatorForm onSubmit={handleSubmit} isLoading={isLoading} />
             </div>

@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
             position: 'relative',
           }}
         >
-          "{roast}"
+          &ldquo;{roast}&rdquo;
         </div>
 
         {/* Footer */}

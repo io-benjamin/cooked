@@ -37,14 +37,15 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
   const totalIncome = inputs.annualIncome + (inputs.sideIncome || 0);
   const monthlyIncome = totalIncome / 12;
   const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
-  const totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0);
+  const _totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0); // TODO: use in future features
   
-  // Cost of living adjustment
+  // Cost of living adjustment (for future use)
   const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
-  const adjustedIncome = (totalIncome * 100) / colIndex;
+  void colIndex; // TODO: incorporate into scoring
   
   // Calculate individual scores (0-100, higher = more cooked)
-  const breakdown = calculateBreakdown(inputs, totalIncome, monthlyIncome, totalDebt, adjustedIncome);
+  const breakdown = calculateBreakdown(inputs, totalIncome, monthlyIncome, totalDebt);
+  void _totalSavings; // silence unused warning
   
   // Apply age adjustment
   const ageMultiplier = getAgeMultiplier(inputs.age);
@@ -91,8 +92,7 @@ function calculateBreakdown(
   inputs: UserInputs,
   totalIncome: number,
   monthlyIncome: number,
-  totalDebt: number,
-  adjustedIncome: number
+  totalDebt: number
 ): ScoreBreakdown {
   // Rent score (0-100)
   const rentRatio = inputs.monthlyRent / monthlyIncome;

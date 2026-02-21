@@ -109,7 +109,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               fontStyle: 'italic',
             }}
           >
-            "{result.roast}"
+            &ldquo;{result.roast}&rdquo;
           </div>
         </div>
 

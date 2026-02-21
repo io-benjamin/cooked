@@ -85,7 +85,7 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
           <div className="space-y-6 animate-slide-up">
             <div className="text-center mb-6">
               <span className="text-4xl mb-2 block">👤</span>
-              <h3 className="text-2xl font-bold">Let's get to know you</h3>
+              <h3 className="text-2xl font-bold">Let&apos;s get to know you</h3>
               <p className="text-white/50 text-sm">Basic info to personalize your results</p>
             </div>
             
@@ -159,7 +159,7 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
             <div className="text-center mb-6">
               <span className="text-4xl mb-2 block">💰</span>
               <h3 className="text-2xl font-bold">Show me the money</h3>
-              <p className="text-white/50 text-sm">We won't judge... much</p>
+              <p className="text-white/50 text-sm">We won&apos;t judge... much</p>
             </div>
             
             <div className="space-y-4">
@@ -241,7 +241,7 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
             <div className="text-center mb-6">
               <span className="text-4xl mb-2 block">💳</span>
               <h3 className="text-2xl font-bold">The debt section</h3>
-              <p className="text-white/50 text-sm">Don't worry, we've all been there 😬</p>
+              <p className="text-white/50 text-sm">Don&apos;t worry, we&apos;ve all been there 😬</p>
             </div>
             
             <div className="space-y-4">

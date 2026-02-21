@@ -44,8 +44,8 @@ export default function LeaderboardPage() {
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
   const [selectedAgeRange, setSelectedAgeRange] = useState<string>('');
 
-  const cities = [...new Set(MOCK_DATA.map(d => d.city))].sort();
-  const industries = [...new Set(MOCK_DATA.map(d => d.industry))].sort();
+  const cities = Array.from(new Set(MOCK_DATA.map(d => d.city))).sort();
+  const industries = Array.from(new Set(MOCK_DATA.map(d => d.industry))).sort();
   const ageRanges = ['18-24', '25-30', '31-40', '40+'];
 
   const filteredData = MOCK_DATA.filter(entry => {
