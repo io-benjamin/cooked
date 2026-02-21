@@ -24,8 +24,7 @@ const TIER_INFO: Record<string, { name: string; emoji: string; color: string; bg
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
   ({ result, avatarUrl, userCity }, ref) => {
     const tier = TIER_INFO[result.tier] || TIER_INFO['medium'];
-    void avatarUrl; // Using steak emoji instead of avatar
-    void userCity;
+    void userCity; // Not used in this design
 
     return (
       <div
@@ -73,25 +72,41 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             boxShadow: `0 0 80px ${tier.color}30`,
             position: 'relative',
           }}>
-            {/* Steak/meat emoji */}
-            <div style={{ fontSize: '80px', marginBottom: '8px' }}>
-              {tier.emoji}
+            {/* Avatar */}
+            <div style={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              border: `3px solid ${tier.color}`,
+              marginBottom: '8px',
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={avatarUrl} 
+                alt="" 
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  filter: `brightness(${1 - (result.score / 100) * 0.3}) sepia(${(result.score / 100) * 0.4})`,
+                }}
+              />
             </div>
             
             {/* Score */}
             <div style={{
-              fontSize: '100px',
+              fontSize: '90px',
               fontWeight: 900,
               color: tier.color,
               lineHeight: 0.9,
-              marginTop: '-10px',
             }}>
               {result.score}%
             </div>
             
             {/* Tier name */}
             <div style={{
-              fontSize: '28px',
+              fontSize: '26px',
               fontWeight: 800,
               color: tier.color,
               letterSpacing: '4px',
