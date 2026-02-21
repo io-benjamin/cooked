@@ -5,26 +5,26 @@ import Link from 'next/link';
 
 // Mock data for now - will be replaced with Supabase
 const MOCK_DATA = [
-  { id: 1, age: 24, city: 'New York, NY', industry: 'Food Service / Restaurant', score: 94, tier: 'ash' },
-  { id: 2, age: 26, city: 'San Francisco, CA', industry: 'Tech / Software', score: 89, tier: 'charcoal' },
-  { id: 3, age: 31, city: 'Los Angeles, CA', industry: 'Media / Entertainment', score: 87, tier: 'charcoal' },
-  { id: 4, age: 23, city: 'Miami, FL', industry: 'Hospitality / Hotel', score: 85, tier: 'charcoal' },
-  { id: 5, age: 28, city: 'Austin, TX', industry: 'Retail / Customer Service', score: 82, tier: 'well-done' },
-  { id: 6, age: 35, city: 'Chicago, IL', industry: 'Healthcare / Nursing', score: 78, tier: 'well-done' },
-  { id: 7, age: 22, city: 'Denver, CO', industry: 'Student', score: 76, tier: 'well-done' },
-  { id: 8, age: 29, city: 'Seattle, WA', industry: 'Construction / Carpentry', score: 72, tier: 'well-done' },
-  { id: 9, age: 27, city: 'Phoenix, AZ', industry: 'Trucking / Delivery', score: 68, tier: 'medium' },
-  { id: 10, age: 33, city: 'Atlanta, GA', industry: 'Administrative / Office', score: 65, tier: 'medium' },
-  { id: 11, age: 25, city: 'Houston, TX', industry: 'Warehouse / Logistics', score: 61, tier: 'medium' },
-  { id: 12, age: 30, city: 'Dallas, TX', industry: 'Automotive / Mechanic', score: 58, tier: 'medium' },
-  { id: 13, age: 34, city: 'Philadelphia, PA', industry: 'Teaching / Education', score: 52, tier: 'medium' },
-  { id: 14, age: 28, city: 'San Antonio, TX', industry: 'Government / Public Sector', score: 45, tier: 'medium-rare' },
-  { id: 15, age: 32, city: 'Small Town / Rural', industry: 'Agriculture / Farming', score: 38, tier: 'medium-rare' },
-  { id: 16, age: 40, city: 'Columbus, OH', industry: 'Manufacturing / Factory', score: 32, tier: 'medium-rare' },
-  { id: 17, age: 36, city: 'Indianapolis, IN', industry: 'Electrician / Plumbing', score: 28, tier: 'medium-rare' },
-  { id: 18, age: 45, city: 'Kansas City, MO', industry: 'Self-Employed / Small Business', score: 22, tier: 'medium-rare' },
-  { id: 19, age: 38, city: 'Detroit, MI', industry: 'Finance / Banking', score: 18, tier: 'raw' },
-  { id: 20, age: 42, city: 'Pittsburgh, PA', industry: 'Consulting', score: 12, tier: 'raw' },
+  { id: 1, age: 24, city: 'New York, NY', industry: 'Food Service / Restaurant', score: 94, tier: 'ash', reason: '72% of income goes to a shoebox apartment' },
+  { id: 2, age: 26, city: 'San Francisco, CA', industry: 'Tech / Software', score: 89, tier: 'charcoal', reason: '$180k salary but still has roommates' },
+  { id: 3, age: 31, city: 'Los Angeles, CA', industry: 'Media / Entertainment', score: 87, tier: 'charcoal', reason: 'Owns more cameras than savings accounts' },
+  { id: 4, age: 23, city: 'Miami, FL', industry: 'Hospitality / Hotel', score: 85, tier: 'charcoal', reason: 'Credit card debt from "networking events"' },
+  { id: 5, age: 28, city: 'Austin, TX', industry: 'Retail / Customer Service', score: 82, tier: 'well-done', reason: 'Moved for tech jobs, works at Target' },
+  { id: 6, age: 35, city: 'Chicago, IL', industry: 'Healthcare / Nursing', score: 78, tier: 'well-done', reason: 'Saves lives but not money' },
+  { id: 7, age: 22, city: 'Denver, CO', industry: 'Student', score: 76, tier: 'well-done', reason: '$87k in loans for a philosophy degree' },
+  { id: 8, age: 29, city: 'Seattle, WA', industry: 'Construction / Carpentry', score: 72, tier: 'well-done', reason: 'Builds houses, can\'t afford one' },
+  { id: 9, age: 27, city: 'Phoenix, AZ', industry: 'Trucking / Delivery', score: 68, tier: 'medium', reason: 'Gas prices ate the emergency fund' },
+  { id: 10, age: 33, city: 'Atlanta, GA', industry: 'Administrative / Office', score: 65, tier: 'medium', reason: 'Same salary since 2019' },
+  { id: 11, age: 25, city: 'Houston, TX', industry: 'Warehouse / Logistics', score: 61, tier: 'medium', reason: 'Amazon Prime membership > retirement' },
+  { id: 12, age: 30, city: 'Dallas, TX', industry: 'Automotive / Mechanic', score: 58, tier: 'medium', reason: 'Fixes cars, drives a beater' },
+  { id: 13, age: 34, city: 'Philadelphia, PA', industry: 'Teaching / Education', score: 52, tier: 'medium', reason: 'Master\'s degree, Chipotle budget' },
+  { id: 14, age: 28, city: 'San Antonio, TX', industry: 'Government / Public Sector', score: 45, tier: 'medium-rare', reason: 'Job security, no salary growth' },
+  { id: 15, age: 32, city: 'Small Town / Rural', industry: 'Agriculture / Farming', score: 38, tier: 'medium-rare', reason: 'Owns land but it\'s all debt' },
+  { id: 16, age: 40, city: 'Columbus, OH', industry: 'Manufacturing / Factory', score: 32, tier: 'medium-rare', reason: 'Union wages + low rent = surviving' },
+  { id: 17, age: 36, city: 'Indianapolis, IN', industry: 'Electrician / Plumbing', score: 28, tier: 'medium-rare', reason: 'Trade school was the move' },
+  { id: 18, age: 45, city: 'Kansas City, MO', industry: 'Self-Employed / Small Business', score: 22, tier: 'medium-rare', reason: 'Bet on themselves and won' },
+  { id: 19, age: 38, city: 'Detroit, MI', industry: 'Finance / Banking', score: 18, tier: 'raw', reason: 'Knows all the loopholes' },
+  { id: 20, age: 42, city: 'Pittsburgh, PA', industry: 'Consulting', score: 12, tier: 'raw', reason: '$400/hr to tell others they\'re cooked' },
 ];
 
 const TIER_INFO: Record<string, { emoji: string; color: string }> = {
@@ -194,18 +194,8 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Leaderboard Table */}
-        <div className="glass rounded-3xl overflow-hidden">
-          {/* Header */}
-          <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 text-sm text-white/50 font-medium">
-            <div className="col-span-1 text-center">#</div>
-            <div className="col-span-2 text-center">Score</div>
-            <div className="col-span-1 text-center">Age</div>
-            <div className="col-span-4">City</div>
-            <div className="col-span-4">Industry</div>
-          </div>
-
-          {/* Rows */}
+        {/* Leaderboard - Card Layout */}
+        <div className="space-y-3">
           {filteredData.map((entry, index) => {
             const tierInfo = TIER_INFO[entry.tier];
             const isTop3 = index < 3;
@@ -213,30 +203,50 @@ export default function LeaderboardPage() {
             return (
               <div 
                 key={entry.id}
-                className={`grid grid-cols-12 gap-4 p-4 items-center border-b border-white/5 hover:bg-white/5 transition-colors ${
-                  isTop3 ? 'bg-gradient-to-r from-orange-500/10 to-transparent' : ''
+                className={`glass rounded-2xl p-4 hover:bg-white/5 transition-colors ${
+                  isTop3 ? 'border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-transparent' : ''
                 }`}
               >
-                <div className="col-span-1 text-center">
-                  {isTop3 ? (
-                    <span className="text-2xl">{['🥇', '🥈', '🥉'][index]}</span>
-                  ) : (
-                    <span className="text-white/50">{index + 1}</span>
-                  )}
+                <div className="flex items-start gap-4">
+                  {/* Rank */}
+                  <div className="flex-shrink-0 w-10 text-center">
+                    {isTop3 ? (
+                      <span className="text-3xl">{['🥇', '🥈', '🥉'][index]}</span>
+                    ) : (
+                      <span className="text-xl text-white/30 font-bold">{index + 1}</span>
+                    )}
+                  </div>
+                  
+                  {/* Main Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Score + Basic Info */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-2xl">{tierInfo.emoji}</span>
+                      <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
+                      <span className="text-white/40">•</span>
+                      <span className="text-white/60">{entry.age}yo</span>
+                      <span className="text-white/40 hidden sm:inline">•</span>
+                      <span className="text-white/60 hidden sm:inline truncate">{entry.city}</span>
+                    </div>
+                    
+                    {/* Reason - The Star */}
+                    <div className="text-white/80 text-sm sm:text-base mb-2">
+                      &ldquo;{entry.reason}&rdquo;
+                    </div>
+                    
+                    {/* Industry tag */}
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.industry}</span>
+                      <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50 sm:hidden">{entry.city}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="col-span-2 text-center">
-                  <span className="text-xl mr-1">{tierInfo.emoji}</span>
-                  <span className={`text-xl font-bold ${tierInfo.color}`}>{entry.score}%</span>
-                </div>
-                <div className="col-span-1 text-center text-white/70">{entry.age}</div>
-                <div className="col-span-4 text-white/70 truncate">{entry.city}</div>
-                <div className="col-span-4 text-white/70 truncate">{entry.industry}</div>
               </div>
             );
           })}
 
           {filteredData.length === 0 && (
-            <div className="p-8 text-center text-white/50">
+            <div className="glass rounded-2xl p-8 text-center text-white/50">
               No results match your filters
             </div>
           )}
