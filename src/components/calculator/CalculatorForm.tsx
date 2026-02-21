@@ -27,9 +27,30 @@ const STEP_TITLES = [
 export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
   const [step, setStep] = useState(1);
   const [inputs, setInputs] = useState<Partial<UserInputs>>({});
+  // Track raw string values for number inputs to allow clearing
+  const [rawValues, setRawValues] = useState<Record<string, string>>({});
 
   const updateInput = <K extends keyof UserInputs>(key: K, value: UserInputs[K]) => {
     setInputs(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Handle number inputs properly - allow empty strings
+  const handleNumberChange = (key: keyof UserInputs, value: string) => {
+    setRawValues(prev => ({ ...prev, [key]: value }));
+    if (value === '' || value === undefined) {
+      setInputs(prev => ({ ...prev, [key]: undefined }));
+    } else {
+      const num = parseInt(value);
+      if (!isNaN(num)) {
+        setInputs(prev => ({ ...prev, [key]: num }));
+      }
+    }
+  };
+
+  const getNumberValue = (key: keyof UserInputs): string => {
+    if (rawValues[key] !== undefined) return rawValues[key];
+    const val = inputs[key];
+    return val !== undefined ? String(val) : '';
   };
 
   const handleSubmit = () => {
@@ -97,8 +118,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                   placeholder="25"
                   min={18}
                   max={80}
-                  value={inputs.age || ''}
-                  onChange={(e) => updateInput('age', parseInt(e.target.value) || 0)}
+                  value={getNumberValue('age')}
+                  onChange={(e) => handleNumberChange('age', e.target.value)}
                   className="h-14 text-lg bg-white/5 border-white/10 rounded-xl focus:border-orange-500 focus:ring-orange-500/20"
                 />
               </div>
@@ -171,8 +192,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="65,000"
-                    value={inputs.annualIncome || ''}
-                    onChange={(e) => updateInput('annualIncome', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('annualIncome')}
+                    onChange={(e) => handleNumberChange('annualIncome', e.target.value)}
                   />
                 </div>
               </div>
@@ -185,8 +206,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="0"
-                    value={inputs.sideIncome || ''}
-                    onChange={(e) => updateInput('sideIncome', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('sideIncome')}
+                    onChange={(e) => handleNumberChange('sideIncome', e.target.value)}
                   />
                 </div>
               </div>
@@ -211,8 +232,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="1,500"
-                    value={inputs.monthlyRent || ''}
-                    onChange={(e) => updateInput('monthlyRent', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('monthlyRent')}
+                    onChange={(e) => handleNumberChange('monthlyRent', e.target.value)}
                   />
                 </div>
               </div>
@@ -253,8 +274,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="0"
-                    value={inputs.studentLoans ?? ''}
-                    onChange={(e) => updateInput('studentLoans', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('studentLoans')}
+                    onChange={(e) => handleNumberChange('studentLoans', e.target.value)}
                   />
                 </div>
               </div>
@@ -267,8 +288,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="0"
-                    value={inputs.creditCardDebt ?? ''}
-                    onChange={(e) => updateInput('creditCardDebt', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('creditCardDebt')}
+                    onChange={(e) => handleNumberChange('creditCardDebt', e.target.value)}
                   />
                 </div>
               </div>
@@ -281,8 +302,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="0"
-                    value={inputs.carLoan ?? ''}
-                    onChange={(e) => updateInput('carLoan', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('carLoan')}
+                    onChange={(e) => handleNumberChange('carLoan', e.target.value)}
                   />
                 </div>
               </div>
@@ -307,8 +328,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="5,000"
-                    value={inputs.totalSavings ?? ''}
-                    onChange={(e) => updateInput('totalSavings', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('totalSavings')}
+                    onChange={(e) => handleNumberChange('totalSavings', e.target.value)}
                   />
                 </div>
               </div>
@@ -321,8 +342,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     type="number"
                     className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
                     placeholder="10,000"
-                    value={inputs.retirementSavings ?? ''}
-                    onChange={(e) => updateInput('retirementSavings', parseInt(e.target.value) || 0)}
+                    value={getNumberValue('retirementSavings')}
+                    onChange={(e) => handleNumberChange('retirementSavings', e.target.value)}
                   />
                 </div>
               </div>
@@ -347,8 +368,8 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                   placeholder="720"
                   min={300}
                   max={850}
-                  value={inputs.creditScore || ''}
-                  onChange={(e) => updateInput('creditScore', parseInt(e.target.value) || undefined)}
+                  value={getNumberValue('creditScore')}
+                  onChange={(e) => handleNumberChange('creditScore', e.target.value)}
                 />
                 <p className="text-xs text-white/30">300-850, or leave blank if unknown</p>
               </div>
