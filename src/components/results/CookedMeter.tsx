@@ -301,7 +301,15 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
 
       {/* Hidden ShareCard */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
-        <ShareCard ref={shareCardRef} result={result} avatarUrl={avatarUrl} userCity={userCity} />
+        <ShareCard 
+          ref={shareCardRef} 
+          result={result} 
+          avatarUrl={avatarUrl} 
+          userCity={userCity}
+          userAge={userAge}
+          userRank={userRank}
+          totalUsers={totalUsers}
+        />
       </div>
     </div>
   );
