@@ -166,7 +166,7 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
             <img 
               src={avatarUrl} 
               alt="You" 
-              className="w-full h-full object-cover transition-all duration-700"
+              className="w-full h-full object-contain transition-all duration-700 bg-[#e8dcc8]"
               style={{
                 filter: `
                   brightness(${1 - flameIntensity * 0.7}) 

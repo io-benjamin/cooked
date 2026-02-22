@@ -103,6 +103,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               border: `3px solid ${tier.color}`,
               marginBottom: '8px',
               position: 'relative',
+              backgroundColor: '#e8dcc8',
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
@@ -111,7 +112,8 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
+                  objectFit: 'contain',
+                  objectPosition: 'center',
                   filter: `brightness(${1 - (result.score / 100) * 0.5}) contrast(${1 + (result.score / 100) * 0.4}) saturate(${1 - (result.score / 100) * 0.9})`,
                 }}
               />
