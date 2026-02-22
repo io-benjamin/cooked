@@ -196,19 +196,8 @@ input[type="number"] {
   .animate-float,
   .animate-flame,
   .animate-flicker,
-  .animate-pulse-glow,
-  .animate-gradient,
   .flame {
     animation: none !important;
-  }
-  
-  .gradient-text {
-    animation: none !important;
-  }
-  
-  .glass {
-    backdrop-filter: none;
-    background: rgba(255, 255, 255, 0.05);
   }
 }
 

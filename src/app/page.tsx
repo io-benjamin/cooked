@@ -65,9 +65,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#050505] relative overflow-hidden">
-      {/* Background effects - simplified on mobile */}
-      <div className="fixed inset-0 grid-bg opacity-50 hidden sm:block" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-orange-500/10 via-red-500/5 to-transparent blur-3xl pointer-events-none hidden sm:block" />
+      {/* Background effects */}
+      <div className="fixed inset-0 grid-bg opacity-50" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-orange-500/10 via-red-500/5 to-transparent blur-3xl pointer-events-none" />
+      <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-orange-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
+      <div className="fixed bottom-0 right-0 w-[400px] h-[400px] bg-gradient-to-tl from-red-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
       
       {/* Floating emojis - desktop only */}
       <div className="hidden sm:block">
