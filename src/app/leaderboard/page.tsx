@@ -113,20 +113,20 @@ export default function LeaderboardPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="glass rounded-2xl p-4 text-center">
+          <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
             <div className="text-3xl font-black text-white">{stats.totalSubmissions.toLocaleString()}</div>
             <div className="text-sm text-white/50">Total Submissions</div>
           </div>
-          <div className="glass rounded-2xl p-4 text-center">
+          <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
             <div className="text-3xl font-black text-orange-400">{stats.avgScore}%</div>
             <div className="text-sm text-white/50">Average Score</div>
           </div>
-          <div className="glass rounded-2xl p-4 text-center">
-            <div className="text-xl font-bold text-white truncate">{stats.mostCookedCity}</div>
+          <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
+            <div className="text-lg font-bold text-white truncate">{stats.mostCookedCity || '—'}</div>
             <div className="text-sm text-white/50">Most Cooked City</div>
           </div>
-          <div className="glass rounded-2xl p-4 text-center">
-            <div className="text-xl font-bold text-white truncate">{stats.mostCookedIndustry}</div>
+          <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
+            <div className="text-lg font-bold text-white truncate">{stats.mostCookedIndustry || '—'}</div>
             <div className="text-sm text-white/50">Most Cooked Industry</div>
           </div>
         </div>
