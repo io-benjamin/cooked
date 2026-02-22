@@ -35,12 +35,20 @@ export interface CookedResult {
   emoji: string;
   roast: string;
   breakdown: ScoreBreakdown;
+  metrics: FinancialMetrics;
   topIssues: Issue[];
   percentile: number;
   cityPercentile?: number;
   industryPercentile?: number;
   ageGroupPercentile?: number;
   recommendations: Recommendation[];
+}
+
+export interface FinancialMetrics {
+  dti: number; // Debt to income ratio (percentage)
+  rentBurden: number; // Rent to income ratio (percentage)
+  savingsRate: number; // Savings / income (percentage)
+  netWorth: number; // Total savings - total debt
 }
 
 export type CookedTier = 'raw' | 'medium-rare' | 'medium' | 'well-done' | 'charcoal' | 'ash';

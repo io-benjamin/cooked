@@ -2,25 +2,33 @@
 
 import { forwardRef } from 'react';
 import { CookedResult } from '@/types/calculator';
-import { getTierLabel } from '@/lib/scoring';
 
 interface ShareCardProps {
   result: CookedResult;
+  avatarUrl: string;
+  userCity: string;
+  userAge?: number;
+  userRank?: number;
+  totalUsers?: number;
 }
 
-// This is the card that gets converted to an image
-export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  ({ result }, ref) => {
-    const tierColors: Record<string, { text: string; gradient: string }> = {
-      'raw': { text: '#4ade80', gradient: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' },
-      'medium-rare': { text: '#a3e635', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)' },
-      'medium': { text: '#facc15', gradient: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)' },
-      'well-done': { text: '#fb923c', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' },
-      'charcoal': { text: '#f87171', gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' },
-      'ash': { text: '#9ca3af', gradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)' },
-    };
+const TIER_INFO: Record<string, { name: string; emoji: string; color: string; bgColor: string }> = {
+  'raw': { name: 'RAW', emoji: '🥶', color: '#22d3ee', bgColor: '#164e63' },
+  'light-sizzle': { name: 'LIGHT SIZZLE', emoji: '🍳', color: '#4ade80', bgColor: '#166534' },
+  'simmering': { name: 'SIMMERING', emoji: '🥘', color: '#facc15', bgColor: '#854d0e' },
+  'sauteed': { name: 'SAUTÉED', emoji: '🔥', color: '#fb923c', bgColor: '#9a3412' },
+  'well-done': { name: 'WELL DONE', emoji: '☠️', color: '#f87171', bgColor: '#991b1b' },
+  'charred': { name: 'CHARRED', emoji: '💀', color: '#a1a1aa', bgColor: '#3f3f46' },
+  // Legacy tiers for backwards compat
+  'medium-rare': { name: 'LIGHT SIZZLE', emoji: '🍳', color: '#4ade80', bgColor: '#166534' },
+  'medium': { name: 'SIMMERING', emoji: '🥘', color: '#facc15', bgColor: '#854d0e' },
+  'charcoal': { name: 'WELL DONE', emoji: '☠️', color: '#f87171', bgColor: '#991b1b' },
+  'ash': { name: 'CHARRED', emoji: '💀', color: '#a1a1aa', bgColor: '#3f3f46' },
+};
 
-    const colors = tierColors[result.tier];
+export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
+  ({ result, avatarUrl, userCity }, ref) => {
+    const tier = TIER_INFO[result.tier] || TIER_INFO['simmering'];
 
     return (
       <div
@@ -28,18 +36,13 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         style={{
           width: '600px',
           height: '600px',
-          background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%)',
-          padding: '40px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          background: '#111111',
           fontFamily: 'system-ui, -apple-system, sans-serif',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        {/* Background grid */}
+        {/* Grid background */}
         <div
           style={{
             position: 'absolute',
@@ -48,92 +51,152 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             backgroundSize: '40px 40px',
           }}
         />
-        
-        {/* Glow effect */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '400px',
-            height: '400px',
-            background: colors.gradient,
-            filter: 'blur(100px)',
-            opacity: 0.3,
-            borderRadius: '50%',
-          }}
-        />
 
-        {/* Content */}
-        <div style={{ position: 'relative', textAlign: 'center' }}>
-          {/* Emoji */}
-          <div style={{ fontSize: '100px', marginBottom: '16px' }}>
-            {result.emoji}
-          </div>
-
-          {/* Score */}
-          <div
-            style={{
-              fontSize: '120px',
-              fontWeight: 900,
-              color: colors.text,
-              lineHeight: 1,
-              textShadow: `0 0 60px ${colors.text}40`,
-            }}
-          >
-            {result.score}%
-          </div>
-
-          {/* Tier */}
-          <div
-            style={{
-              fontSize: '32px',
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.7)',
-              marginTop: '8px',
-              textTransform: 'uppercase',
-              letterSpacing: '4px',
-            }}
-          >
-            {getTierLabel(result.tier)}
-          </div>
-
-          {/* Roast */}
-          <div
-            style={{
-              fontSize: '18px',
-              color: 'rgba(255,255,255,0.5)',
-              marginTop: '24px',
-              maxWidth: '400px',
-              fontStyle: 'italic',
-            }}
-          >
-            &ldquo;{result.roast}&rdquo;
+        {/* Top branding */}
+        <div style={{
+          position: 'absolute',
+          top: '24px',
+          left: '0',
+          right: '0',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontSize: '14px',
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+          }}>
+            Financial Reality Check
           </div>
         </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '30px',
+        {/* Content */}
+        <div style={{
+          position: 'relative',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px',
+        }}>
+          
+          {/* Big colored circle */}
+          <div style={{
+            width: '320px',
+            height: '320px',
+            borderRadius: '50%',
+            background: `radial-gradient(circle at 30% 30%, ${tier.bgColor} 0%, ${tier.bgColor}90 100%)`,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <span style={{ fontSize: '28px' }}>🔥</span>
-          <span
-            style={{
-              fontSize: '20px',
-              fontWeight: 700,
+            justifyContent: 'center',
+            boxShadow: `0 0 80px ${tier.color}30`,
+            position: 'relative',
+          }}>
+            {/* Avatar */}
+            <div style={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              border: `3px solid ${tier.color}`,
+              marginBottom: '8px',
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={avatarUrl} 
+                alt="" 
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  filter: `brightness(${1 - (result.score / 100) * 0.3}) sepia(${(result.score / 100) * 0.4})`,
+                }}
+              />
+            </div>
+            
+            {/* Score */}
+            <div style={{
+              fontSize: '90px',
+              fontWeight: 900,
+              color: tier.color,
+              lineHeight: 0.9,
+            }}>
+              {result.score}%
+            </div>
+            
+            {/* Tier name */}
+            <div style={{
+              fontSize: '26px',
+              fontWeight: 800,
+              color: tier.color,
+              letterSpacing: '4px',
+              marginTop: '4px',
+            }}>
+              {tier.name}
+            </div>
+          </div>
+
+          {/* City badge */}
+          {userCity && (
+            <div style={{
+              marginTop: '16px',
+              fontSize: '14px',
               color: 'rgba(255,255,255,0.4)',
-              letterSpacing: '1px',
-            }}
-          >
-            amicooked.com
-          </span>
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}>
+              <span>📍</span>
+              <span>{userCity}</span>
+            </div>
+          )}
+
+          {/* Roast */}
+          <div style={{
+            marginTop: '20px',
+            fontSize: '16px',
+            color: 'rgba(255,255,255,0.5)',
+            textAlign: 'center',
+            fontStyle: 'italic',
+            maxWidth: '450px',
+            lineHeight: 1.4,
+          }}>
+            &ldquo;{result.roast}&rdquo;
+          </div>
+
+          {/* Footer */}
+          <div style={{
+            position: 'absolute',
+            bottom: '28px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <span style={{ fontSize: '24px' }}>🔥</span>
+              <span style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                color: 'rgba(255,255,255,0.6)',
+                letterSpacing: '0.5px',
+              }}>
+                amicooked.com
+              </span>
+            </div>
+            <div style={{
+              fontSize: '12px',
+              color: 'rgba(255,255,255,0.3)',
+            }}>
+              Check your financial health
+            </div>
+          </div>
         </div>
       </div>
     );

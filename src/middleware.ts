@@ -2,7 +2,11 @@ import { type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  // Only run Supabase middleware if environment variables are set
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return await updateSession(request);
+  }
+  return;
 }
 
 export const config = {
