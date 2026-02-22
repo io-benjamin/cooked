@@ -1,4 +1,4 @@
-import { UserInputs, CookedResult, CookedTier, Issue, Recommendation, ScoreBreakdown } from '@/types/calculator';
+import { UserInputs, CookedResult, CookedTier, Issue, Recommendation, ScoreBreakdown, FinancialMetrics } from '@/types/calculator';
 import { COST_OF_LIVING_INDEX } from '@/data/cities';
 
 // Scoring weights
@@ -37,7 +37,7 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
   const totalIncome = inputs.annualIncome + (inputs.sideIncome || 0);
   const monthlyIncome = totalIncome / 12;
   const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
-  const _totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0); // TODO: use in future features
+  const totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0);
   
   // Cost of living adjustment (for future use)
   const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
@@ -45,7 +45,14 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
   
   // Calculate individual scores (0-100, higher = more cooked)
   const breakdown = calculateBreakdown(inputs, totalIncome, monthlyIncome, totalDebt);
-  void _totalSavings; // silence unused warning
+  
+  // Calculate financial metrics for leaderboard
+  const metrics: FinancialMetrics = {
+    dti: Math.round((totalDebt / totalIncome) * 100),
+    rentBurden: Math.round((inputs.monthlyRent / monthlyIncome) * 100),
+    savingsRate: Math.round((totalSavings / totalIncome) * 100),
+    netWorth: totalSavings - totalDebt,
+  };
   
   // Apply age adjustment
   const ageMultiplier = getAgeMultiplier(inputs.age);
@@ -82,6 +89,7 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
     emoji: tierInfo.emoji,
     roast,
     breakdown,
+    metrics,
     topIssues: topIssues.slice(0, 3),
     percentile: 50, // Will be calculated with real data
     recommendations,

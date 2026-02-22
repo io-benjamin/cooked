@@ -13,18 +13,22 @@ interface ShareCardProps {
 }
 
 const TIER_INFO: Record<string, { name: string; emoji: string; color: string; bgColor: string }> = {
-  'raw': { name: 'RAW', emoji: '🥩', color: '#4ade80', bgColor: '#166534' },
-  'medium-rare': { name: 'MEDIUM RARE', emoji: '🥩', color: '#84cc16', bgColor: '#3f6212' },
-  'medium': { name: 'MEDIUM', emoji: '🍖', color: '#facc15', bgColor: '#854d0e' },
-  'well-done': { name: 'WELL DONE', emoji: '🍖', color: '#fb923c', bgColor: '#9a3412' },
-  'charcoal': { name: 'CHARCOAL', emoji: '🥓', color: '#f87171', bgColor: '#991b1b' },
-  'ash': { name: 'CHARRED', emoji: '🖤', color: '#a1a1aa', bgColor: '#3f3f46' },
+  'raw': { name: 'RAW', emoji: '🥶', color: '#22d3ee', bgColor: '#164e63' },
+  'light-sizzle': { name: 'LIGHT SIZZLE', emoji: '🍳', color: '#4ade80', bgColor: '#166534' },
+  'simmering': { name: 'SIMMERING', emoji: '🥘', color: '#facc15', bgColor: '#854d0e' },
+  'sauteed': { name: 'SAUTÉED', emoji: '🔥', color: '#fb923c', bgColor: '#9a3412' },
+  'well-done': { name: 'WELL DONE', emoji: '☠️', color: '#f87171', bgColor: '#991b1b' },
+  'charred': { name: 'CHARRED', emoji: '💀', color: '#a1a1aa', bgColor: '#3f3f46' },
+  // Legacy tiers for backwards compat
+  'medium-rare': { name: 'LIGHT SIZZLE', emoji: '🍳', color: '#4ade80', bgColor: '#166534' },
+  'medium': { name: 'SIMMERING', emoji: '🥘', color: '#facc15', bgColor: '#854d0e' },
+  'charcoal': { name: 'WELL DONE', emoji: '☠️', color: '#f87171', bgColor: '#991b1b' },
+  'ash': { name: 'CHARRED', emoji: '💀', color: '#a1a1aa', bgColor: '#3f3f46' },
 };
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
   ({ result, avatarUrl, userCity }, ref) => {
-    const tier = TIER_INFO[result.tier] || TIER_INFO['medium'];
-    void userCity; // Not used in this design
+    const tier = TIER_INFO[result.tier] || TIER_INFO['simmering'];
 
     return (
       <div
@@ -47,6 +51,24 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             backgroundSize: '40px 40px',
           }}
         />
+
+        {/* Top branding */}
+        <div style={{
+          position: 'absolute',
+          top: '24px',
+          left: '0',
+          right: '0',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontSize: '14px',
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+          }}>
+            Financial Reality Check
+          </div>
+        </div>
 
         {/* Content */}
         <div style={{
@@ -116,10 +138,25 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             </div>
           </div>
 
+          {/* City badge */}
+          {userCity && (
+            <div style={{
+              marginTop: '16px',
+              fontSize: '14px',
+              color: 'rgba(255,255,255,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}>
+              <span>📍</span>
+              <span>{userCity}</span>
+            </div>
+          )}
+
           {/* Roast */}
           <div style={{
-            marginTop: '32px',
-            fontSize: '18px',
+            marginTop: '20px',
+            fontSize: '16px',
             color: 'rgba(255,255,255,0.5)',
             textAlign: 'center',
             fontStyle: 'italic',
@@ -132,20 +169,33 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           {/* Footer */}
           <div style={{
             position: 'absolute',
-            bottom: '32px',
+            bottom: '28px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: '8px',
+            gap: '4px',
           }}>
-            <span style={{ fontSize: '24px' }}>🔥</span>
-            <span style={{
-              fontSize: '20px',
-              fontWeight: 600,
-              color: 'rgba(255,255,255,0.5)',
-              letterSpacing: '0.5px',
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
             }}>
-              amicooked.com
-            </span>
+              <span style={{ fontSize: '24px' }}>🔥</span>
+              <span style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                color: 'rgba(255,255,255,0.6)',
+                letterSpacing: '0.5px',
+              }}>
+                amicooked.com
+              </span>
+            </div>
+            <div style={{
+              fontSize: '12px',
+              color: 'rgba(255,255,255,0.3)',
+            }}>
+              Check your financial health
+            </div>
           </div>
         </div>
       </div>

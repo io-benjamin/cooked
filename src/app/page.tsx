@@ -30,6 +30,28 @@ export default function Home() {
     setResult(calculatedResult);
     setStep('results');
     setIsLoading(false);
+
+    // Submit to Supabase (fire and forget - don't block UI)
+    try {
+      await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          age: inputs.age,
+          city: inputs.city,
+          industry: inputs.industry,
+          score: calculatedResult.score,
+          tier: calculatedResult.tier,
+          dti: calculatedResult.metrics.dti,
+          rentBurden: calculatedResult.metrics.rentBurden,
+          savingsRate: calculatedResult.metrics.savingsRate,
+          netWorth: calculatedResult.metrics.netWorth,
+          isPublic: true,
+        }),
+      });
+    } catch {
+      // Silently fail - don't break UX if Supabase isn't configured
+    }
   };
 
   const handleReset = () => {
