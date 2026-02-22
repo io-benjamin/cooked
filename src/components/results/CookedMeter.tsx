@@ -228,19 +228,6 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
         {/* Doneness Meter with Markers */}
         <div className="mt-8 px-4">
           <div className="relative">
-            {/* Marker labels above */}
-            <div className="absolute -top-6 w-full text-xs">
-              <div className="absolute text-cyan-400" style={{ left: `${cityAvg}%`, transform: 'translateX(-50%)' }}>
-                📍 {userCity}
-              </div>
-              <div className="absolute text-purple-400" style={{ left: `${industryAvg}%`, transform: 'translateX(-50%)' }}>
-                💼 Industry
-              </div>
-              <div className="absolute text-green-400" style={{ left: '15%', transform: 'translateX(-50%)' }}>
-                ⭐ Top 10%
-              </div>
-            </div>
-            
             <div className="h-6 bg-white/5 rounded-full overflow-hidden relative">
               <div 
                 className="h-full rounded-full transition-all duration-1000 ease-out"
@@ -251,17 +238,17 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               />
               {/* City avg marker */}
               <div 
-                className="absolute top-0 h-full w-0.5 bg-cyan-400/60"
+                className="absolute top-0 h-full w-0.5 bg-cyan-400"
                 style={{ left: `${cityAvg}%` }}
               />
               {/* Industry avg marker */}
               <div 
-                className="absolute top-0 h-full w-0.5 bg-purple-400/60"
+                className="absolute top-0 h-full w-0.5 bg-purple-400"
                 style={{ left: `${industryAvg}%` }}
               />
               {/* Top 10% marker */}
               <div 
-                className="absolute top-0 h-full w-0.5 bg-green-400/60"
+                className="absolute top-0 h-full w-0.5 bg-green-400"
                 style={{ left: '15%' }}
               />
               {/* Your position marker */}
@@ -277,6 +264,25 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               <span>🔥</span>
               <span>☠️</span>
               <span>💀 Charred</span>
+            </div>
+            {/* Legend below */}
+            <div className="flex justify-center gap-4 mt-3 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+                <span className="text-white/60">You</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                <span className="text-white/60">{userCity} avg</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                <span className="text-white/60">Industry</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                <span className="text-white/60">Top 10%</span>
+              </div>
             </div>
           </div>
         </div>
