@@ -88,9 +88,15 @@ export default function Home() {
               am i <span className="gradient-text">cooked</span>?
             </span>
           </div>
-          <nav className="hidden sm:flex gap-6 text-sm text-white/50">
-            <Link href="/leaderboard" className="hover:text-white transition-colors">leaderboard</Link>
-            <Link href="/about" className="hover:text-white transition-colors">about</Link>
+          <nav className="flex gap-4 sm:gap-6 text-sm text-white/50">
+            <Link href="/leaderboard" className="hover:text-white transition-colors">
+              <span className="sm:hidden">🏆</span>
+              <span className="hidden sm:inline">leaderboard</span>
+            </Link>
+            <Link href="/about" className="hover:text-white transition-colors">
+              <span className="sm:hidden">ℹ️</span>
+              <span className="hidden sm:inline">about</span>
+            </Link>
           </nav>
         </div>
       </header>
