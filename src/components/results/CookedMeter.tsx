@@ -38,6 +38,10 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   const userRank = Math.floor(totalUsers * (result.percentile / 100));
   const aheadOf = 100 - result.percentile;
   const savingsGap = (Math.random() * 3 + 0.5).toFixed(1); // Mock
+  
+  // Mock averages for meter markers (will come from real data)
+  const cityAvg = Math.min(85, Math.max(25, result.score + (Math.random() * 20 - 10))); // City average
+  const industryAvg = Math.min(80, Math.max(20, result.score + (Math.random() * 30 - 15))); // Industry average
 
   useEffect(() => {
     setTimeout(() => setShowContent(true), 300);
@@ -216,91 +220,157 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
           >
             {tier.emoji} {tier.name}
           </div>
+          <div className="text-white/40 text-sm mt-3">
+            — and here&apos;s why
+          </div>
         </div>
 
-        {/* Doneness Meter */}
+        {/* Doneness Meter with Markers */}
         <div className="mt-8 px-4">
-          <div className="h-6 bg-white/5 rounded-full overflow-hidden relative">
-            <div 
-              className="h-full rounded-full transition-all duration-1000 ease-out"
-              style={{ 
-                width: `${animatedScore}%`,
-                background: `linear-gradient(90deg, #22d3ee 0%, #4ade80 20%, #facc15 40%, #fb923c 60%, #f87171 80%, #a1a1aa 100%)`
-              }}
-            />
-            {/* Marker */}
-            <div 
-              className="absolute top-0 h-full w-1 bg-white transition-all duration-1000"
-              style={{ left: `${animatedScore}%`, transform: 'translateX(-50%)' }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-white/40 mt-2 px-1">
-            <span>🥶 Raw</span>
-            <span>🍳</span>
-            <span>🥘</span>
-            <span>🔥</span>
-            <span>☠️</span>
-            <span>💀 Charred</span>
+          <div className="relative">
+            {/* Marker labels above */}
+            <div className="absolute -top-6 w-full text-xs">
+              <div className="absolute text-cyan-400" style={{ left: `${cityAvg}%`, transform: 'translateX(-50%)' }}>
+                📍 {userCity}
+              </div>
+              <div className="absolute text-purple-400" style={{ left: `${industryAvg}%`, transform: 'translateX(-50%)' }}>
+                💼 Industry
+              </div>
+              <div className="absolute text-green-400" style={{ left: '15%', transform: 'translateX(-50%)' }}>
+                ⭐ Top 10%
+              </div>
+            </div>
+            
+            <div className="h-6 bg-white/5 rounded-full overflow-hidden relative">
+              <div 
+                className="h-full rounded-full transition-all duration-1000 ease-out"
+                style={{ 
+                  width: `${animatedScore}%`,
+                  background: `linear-gradient(90deg, #22d3ee 0%, #4ade80 20%, #facc15 40%, #fb923c 60%, #f87171 80%, #a1a1aa 100%)`
+                }}
+              />
+              {/* City avg marker */}
+              <div 
+                className="absolute top-0 h-full w-0.5 bg-cyan-400/60"
+                style={{ left: `${cityAvg}%` }}
+              />
+              {/* Industry avg marker */}
+              <div 
+                className="absolute top-0 h-full w-0.5 bg-purple-400/60"
+                style={{ left: `${industryAvg}%` }}
+              />
+              {/* Top 10% marker */}
+              <div 
+                className="absolute top-0 h-full w-0.5 bg-green-400/60"
+                style={{ left: '15%' }}
+              />
+              {/* Your position marker */}
+              <div 
+                className="absolute top-0 h-full w-1.5 bg-white rounded-full transition-all duration-1000 shadow-lg"
+                style={{ left: `${animatedScore}%`, transform: 'translateX(-50%)' }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-white/40 mt-2 px-1">
+              <span>🥶 Raw</span>
+              <span>🍳</span>
+              <span>🥘</span>
+              <span>🔥</span>
+              <span>☠️</span>
+              <span>💀 Charred</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* === RANKING SECTION === */}
+      {/* === RANKING SECTION with Percentile Framing === */}
       <div className="glass rounded-3xl p-6">
-        <div className="text-center mb-4">
-          <div className="text-white/50 text-sm">Your Ranking</div>
+        <div className="text-center mb-2">
+          <div className="text-white/50 text-sm">Your Ranking in {userCity}</div>
           <div className="text-4xl font-black text-white">
             #{userRank.toLocaleString()} <span className="text-white/40 text-lg font-normal">of {totalUsers.toLocaleString()}</span>
           </div>
-          <div className="text-white/50 text-sm mt-1">
-            in {userCity} (Age {userAge})
+        </div>
+        <div className="border-t border-white/10 pt-4 mt-4 space-y-2">
+          <div className={`text-center text-lg ${aheadOf >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+            You&apos;re {aheadOf >= 50 ? 'ahead of' : 'behind'} <span className="font-bold">{aheadOf >= 50 ? aheadOf : 100 - aheadOf}%</span> of {userAge}-year-olds in {userCity}
+          </div>
+          <div className="text-center text-orange-400">
+            You&apos;re behind {userIndustry}s by <span className="font-bold">{savingsGap} years</span> of savings
           </div>
         </div>
       </div>
 
-      {/* === COMPARISON INSIGHTS === */}
-      <div className="space-y-3">
-        {/* Age comparison */}
-        <div className={`glass rounded-2xl p-5 border-l-4 ${aheadOf >= 50 ? 'border-l-green-500' : 'border-l-red-500'}`}>
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">{aheadOf >= 50 ? '📈' : '📉'}</div>
-            <div>
-              <div className="text-lg font-semibold text-white">
-                You&apos;re {aheadOf >= 50 ? 'ahead of' : 'behind'} <span style={{ color: aheadOf >= 50 ? '#4ade80' : '#f87171' }}>{aheadOf >= 50 ? aheadOf : 100 - aheadOf}%</span> of people your age
-              </div>
-              <div className="text-sm text-white/50">Compared to other {userAge}-year-olds nationwide</div>
+      {/* === WHY YOU'RE COOKED - Breakdown Cards === */}
+      <div className="glass rounded-3xl p-6">
+        <h3 className="text-xl font-bold text-white mb-4 text-center">
+          Why You&apos;re {result.score}% Cooked
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          {/* Net Worth */}
+          <div className="bg-white/5 rounded-2xl p-4 text-center">
+            <div className="text-2xl mb-1">💰</div>
+            <div className="text-white/50 text-xs uppercase tracking-wide">Net Worth</div>
+            <div className={`text-2xl font-bold ${result.metrics.netWorth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              ${Math.abs(result.metrics.netWorth).toLocaleString()}
+              {result.metrics.netWorth < 0 && <span className="text-sm"> debt</span>}
+            </div>
+            <div className="text-white/40 text-xs mt-1">
+              City avg: ${Math.round(result.metrics.netWorth * 1.4 + 5000).toLocaleString()}
+            </div>
+          </div>
+          
+          {/* Debt Ratio */}
+          <div className="bg-white/5 rounded-2xl p-4 text-center">
+            <div className="text-2xl mb-1">💳</div>
+            <div className="text-white/50 text-xs uppercase tracking-wide">Debt-to-Income</div>
+            <div className={`text-2xl font-bold ${result.metrics.dti <= 35 ? 'text-green-400' : result.metrics.dti <= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {result.metrics.dti}%
+            </div>
+            <div className="text-white/40 text-xs mt-1">
+              Healthy: under 35%
+            </div>
+          </div>
+          
+          {/* Rent Burden */}
+          <div className="bg-white/5 rounded-2xl p-4 text-center">
+            <div className="text-2xl mb-1">🏠</div>
+            <div className="text-white/50 text-xs uppercase tracking-wide">Rent Burden</div>
+            <div className={`text-2xl font-bold ${result.metrics.rentBurden <= 30 ? 'text-green-400' : result.metrics.rentBurden <= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {result.metrics.rentBurden}%
+            </div>
+            <div className="text-white/40 text-xs mt-1">
+              Ideal: under 30%
+            </div>
+          </div>
+          
+          {/* Savings Rate */}
+          <div className="bg-white/5 rounded-2xl p-4 text-center">
+            <div className="text-2xl mb-1">📈</div>
+            <div className="text-white/50 text-xs uppercase tracking-wide">Savings Rate</div>
+            <div className={`text-2xl font-bold ${result.metrics.savingsRate >= 20 ? 'text-green-400' : result.metrics.savingsRate >= 10 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {result.metrics.savingsRate}%
+            </div>
+            <div className="text-white/40 text-xs mt-1">
+              Target: 20%+
             </div>
           </div>
         </div>
-
-        {/* Industry comparison */}
-        <div className="glass rounded-2xl p-5 border-l-4 border-l-orange-500">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">💼</div>
-            <div>
-              <div className="text-lg font-semibold text-white">
-                You&apos;re behind {userIndustry}s in your city by <span className="text-orange-400">{savingsGap} years</span> of savings
-              </div>
-              <div className="text-sm text-white/50">Based on average emergency fund runway</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Top issue */}
-        {result.topIssues[0] && (
-          <div className="glass rounded-2xl p-5 border-l-4 border-l-yellow-500">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl">🔥</div>
-              <div>
-                <div className="text-lg font-semibold text-white">
-                  What&apos;s cooking you most: <span className="text-yellow-400">{result.topIssues[0].category}</span>
-                </div>
-                <div className="text-sm text-white/50">{result.topIssues[0].description}</div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* === TOP ISSUE === */}
+      {result.topIssues[0] && (
+        <div className="glass rounded-2xl p-5 border-l-4 border-l-yellow-500">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">🔥</div>
+            <div>
+              <div className="text-lg font-semibold text-white">
+                What&apos;s cooking you most: <span className="text-yellow-400">{result.topIssues[0].category}</span>
+              </div>
+              <div className="text-sm text-white/50">{result.topIssues[0].description}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* === ROAST === */}
       <div className="glass rounded-3xl p-6 text-center">
