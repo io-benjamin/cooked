@@ -371,13 +371,21 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
 
       {/* === SHARE BUTTON (Sticky on mobile) === */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#050505] via-[#050505] to-transparent sm:relative sm:p-0 sm:bg-none z-50">
-        <button
-          onClick={handleShare}
-          disabled={isGenerating}
-          className="w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all disabled:opacity-50 shadow-lg shadow-orange-500/25"
-        >
-          {isGenerating ? 'Generating...' : 'Share Results 🔥'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleShare}
+            disabled={isGenerating}
+            className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all disabled:opacity-50 shadow-lg shadow-orange-500/25"
+          >
+            {isGenerating ? 'Generating...' : 'Share 🔥'}
+          </button>
+          <a
+            href="/leaderboard"
+            className="h-14 px-6 bg-white/10 hover:bg-white/20 text-white font-bold text-lg rounded-2xl border border-white/10 transition-all flex items-center justify-center"
+          >
+            🏆
+          </a>
+        </div>
       </div>
       
       {/* Spacer for sticky button on mobile */}
