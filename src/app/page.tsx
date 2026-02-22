@@ -71,13 +71,11 @@ export default function Home() {
       <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-orange-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
       <div className="fixed bottom-0 right-0 w-[400px] h-[400px] bg-gradient-to-tl from-red-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
       
-      {/* Floating emojis - desktop only */}
-      <div className="hidden sm:block">
-        <div className="fixed top-20 left-[10%] text-4xl animate-float opacity-20" style={{ animationDelay: '0s' }}>🔥</div>
-        <div className="fixed top-40 right-[15%] text-3xl animate-float opacity-20" style={{ animationDelay: '1s' }}>💀</div>
-        <div className="fixed bottom-40 left-[20%] text-3xl animate-float opacity-20" style={{ animationDelay: '2s' }}>🥩</div>
-        <div className="fixed bottom-60 right-[10%] text-4xl animate-float opacity-20" style={{ animationDelay: '0.5s' }}>🖤</div>
-      </div>
+      {/* Floating emojis - static on mobile (CSS disables animation), animated on desktop */}
+      <div className="fixed top-20 left-[10%] text-4xl animate-float opacity-20" style={{ animationDelay: '0s' }}>🔥</div>
+      <div className="fixed top-40 right-[15%] text-3xl animate-float opacity-20" style={{ animationDelay: '1s' }}>💀</div>
+      <div className="fixed bottom-40 left-[20%] text-3xl animate-float opacity-20" style={{ animationDelay: '2s' }}>🥩</div>
+      <div className="fixed bottom-60 right-[10%] text-4xl animate-float opacity-20" style={{ animationDelay: '0.5s' }}>🖤</div>
 
       {/* Header */}
       <header className="relative z-50 border-b border-white/5">
