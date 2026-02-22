@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
               letterSpacing: '2px',
             }}
           >
-            areyoucooked.co
+            financiallycooked.com
           </span>
         </div>
       </div>

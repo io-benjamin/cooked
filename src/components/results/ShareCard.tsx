@@ -207,7 +207,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                 color: 'rgba(255,255,255,0.6)',
                 letterSpacing: '0.5px',
               }}>
-                areyoucooked.co
+                financiallycooked.com
               </span>
             </div>
             <div style={{

@@ -79,7 +79,7 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   };
 
   const handleShare = async () => {
-    const text = `I'm ${result.score}% cooked 🔥\n\nRanked #${userRank.toLocaleString()} in ${userCity}\n\nFind out how cooked you are: areyoucooked.co`;
+    const text = `I'm ${result.score}% cooked 🔥\n\nRanked #${userRank.toLocaleString()} in ${userCity}\n\nFind out how cooked you are: financiallycooked.com`;
     
     if (navigator.share && navigator.canShare) {
       setIsGenerating(true);
