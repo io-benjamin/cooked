@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CalculatorForm } from '@/components/calculator/CalculatorForm';
 import { CookedMeter } from '@/components/results/CookedMeter';
 import { AvatarPicker } from '@/components/avatar/AvatarPicker';
+import { LiveCounter } from '@/components/LiveCounter';
 import { calculateCookedScore } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
@@ -86,7 +87,7 @@ export default function Home() {
           </div>
           <nav className="hidden sm:flex gap-6 text-sm text-white/50">
             <Link href="/leaderboard" className="hover:text-white transition-colors">leaderboard</Link>
-            <a href="#" className="hover:text-white transition-colors">about</a>
+            <Link href="/about" className="hover:text-white transition-colors">about</Link>
           </nav>
         </div>
       </header>
@@ -99,13 +100,7 @@ export default function Home() {
             <div className="space-y-8 max-w-3xl mx-auto">
               {/* Main headline */}
               <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm text-white/70">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                  </span>
-                  14,293 people checked today
-                </div>
+                <LiveCounter />
                 
                 <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight">
                   are you financially

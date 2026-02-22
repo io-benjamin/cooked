@@ -96,7 +96,7 @@ export default function LeaderboardPage() {
           </Link>
           <nav className="hidden sm:flex gap-6 text-sm text-white/50">
             <Link href="/leaderboard" className="text-white">leaderboard</Link>
-            <Link href="/#" className="hover:text-white transition-colors">about</Link>
+            <Link href="/about" className="hover:text-white transition-colors">about</Link>
           </nav>
         </div>
       </header>
