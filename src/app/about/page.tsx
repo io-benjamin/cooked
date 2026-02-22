@@ -38,11 +38,6 @@ export default function AboutPage() {
             A financial reality check for the chronically online.
           </p>
 
-          <div className="glass rounded-3xl p-8 mb-12">
-            <p className="text-white/50 text-lg">Built by</p>
-            <p className="text-3xl font-bold text-white mt-2">Io</p>
-          </div>
-
           <Link 
             href="/"
             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl font-bold text-lg hover:scale-105 transition-transform"
