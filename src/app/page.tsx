@@ -47,6 +47,7 @@ export default function Home() {
           rentBurden: calculatedResult.metrics.rentBurden,
           savingsRate: calculatedResult.metrics.savingsRate,
           netWorth: calculatedResult.metrics.netWorth,
+          avatarUrl: avatarUrl,
           isPublic: true,
         }),
       });

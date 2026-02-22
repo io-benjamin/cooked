@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       rent_burden: body.rentBurden,
       savings_rate: body.savingsRate,
       net_worth: body.netWorth,
+      avatar_url: body.avatarUrl || null,
       is_public: body.isPublic ?? true,
     })
     .select()

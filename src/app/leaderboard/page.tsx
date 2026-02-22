@@ -15,6 +15,7 @@ interface Submission {
   rent_burden: number;
   savings_rate: number;
   net_worth: number;
+  avatar_url: string | null;
 }
 
 const TIER_INFO: Record<string, { emoji: string; color: string }> = {
@@ -249,14 +250,31 @@ export default function LeaderboardPage() {
                       )}
                     </div>
                     
+                    {/* Avatar */}
+                    <div className="flex-shrink-0">
+                      {entry.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                          src={entry.avatar_url} 
+                          alt="" 
+                          className={`w-14 h-14 rounded-xl object-cover border-2 ${tierInfo.color.replace('text-', 'border-')}`}
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
+                          {tierInfo.emoji}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Main Content */}
                     <div className="flex-1 min-w-0">
                       {/* Score + Basic Info */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-2xl">{tierInfo.emoji}</span>
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
                         <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
                         <span className="text-white/40">•</span>
-                        <span className="text-white/60">{entry.age}yo in {entry.city}</span>
+                        <span className="text-white/60 text-sm">{entry.age}yo</span>
+                        <span className="text-white/40">•</span>
+                        <span className="text-white/60 text-sm truncate">{entry.city}</span>
                       </div>
                       
                       {/* Financial Metrics */}
