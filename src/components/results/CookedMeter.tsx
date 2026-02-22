@@ -78,25 +78,6 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
     });
   };
 
-  const handleDownload = async () => {
-    setIsGenerating(true);
-    try {
-      const blob = await generateImage();
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `cooked-${result.score}percent.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleShare = async () => {
     const text = `I'm ${result.score}% cooked 🔥\n\nRanked #${userRank.toLocaleString()} in ${userCity}\n\nFind out how cooked you are: amicooked.com`;
     
@@ -384,23 +365,19 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
         <p className="text-xl text-white/70 italic">&ldquo;{result.roast}&rdquo;</p>
       </div>
 
-      {/* === SHARE BUTTONS === */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* === SHARE BUTTON (Sticky on mobile) === */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#050505] via-[#050505] to-transparent sm:relative sm:p-0 sm:bg-none z-50">
         <button
           onClick={handleShare}
           disabled={isGenerating}
-          className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all disabled:opacity-50"
+          className="w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all disabled:opacity-50 shadow-lg shadow-orange-500/25"
         >
           {isGenerating ? 'Generating...' : 'Share Results 🔥'}
         </button>
-        <button
-          onClick={handleDownload}
-          disabled={isGenerating}
-          className="flex-1 h-14 bg-white/10 hover:bg-white/20 text-white font-bold text-lg rounded-2xl border border-white/10 transition-all disabled:opacity-50"
-        >
-          {isGenerating ? '...' : 'Download Card 📸'}
-        </button>
       </div>
+      
+      {/* Spacer for sticky button on mobile */}
+      <div className="h-20 sm:hidden"></div>
 
       {/* Hidden ShareCard */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
