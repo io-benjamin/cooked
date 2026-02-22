@@ -122,20 +122,24 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
         
         {/* Avatar with flames */}
         <div className="relative inline-block mb-6">
-          {/* Flames behind */}
+          {/* Flames behind - simplified on mobile */}
           <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
-            {[...Array(5)].map((_, i) => (
-              <div 
-                key={i} 
-                className="text-3xl animate-flame"
-                style={{ 
-                  animationDelay: `${i * 0.1}s`,
-                  opacity: 0.5 + flameIntensity * 0.5,
-                }}
-              >
-                🔥
-              </div>
-            ))}
+            {/* Single flame on mobile, animated flames on desktop */}
+            <div className="sm:hidden text-3xl" style={{ opacity: 0.5 + flameIntensity * 0.5 }}>🔥</div>
+            <div className="hidden sm:flex gap-1">
+              {[...Array(5)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className="text-3xl animate-flame"
+                  style={{ 
+                    animationDelay: `${i * 0.1}s`,
+                    opacity: 0.5 + flameIntensity * 0.5,
+                  }}
+                >
+                  🔥
+                </div>
+              ))}
+            </div>
           </div>
           
           {/* Avatar - "Becoming Uncanny" effect */}

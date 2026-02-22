@@ -190,3 +190,35 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* Reduce motion on mobile for better performance */
+@media (max-width: 640px) {
+  .animate-float,
+  .animate-flame,
+  .animate-flicker,
+  .animate-pulse-glow,
+  .animate-gradient,
+  .flame {
+    animation: none !important;
+  }
+  
+  .gradient-text {
+    animation: none !important;
+  }
+  
+  .glass {
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Also respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
