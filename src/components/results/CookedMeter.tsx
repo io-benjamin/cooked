@@ -165,43 +165,39 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               className="w-full h-full object-cover transition-all duration-700"
               style={{
                 filter: `
-                  brightness(${1 - flameIntensity * 0.5}) 
-                  contrast(${1 + flameIntensity * 0.4}) 
-                  saturate(${1 - flameIntensity * 0.9})
-                  ${flameIntensity > 0.6 ? `blur(${(flameIntensity - 0.6) * 1.5}px)` : ''}
+                  brightness(${1 - flameIntensity * 0.7}) 
+                  contrast(${1 + flameIntensity * 0.6}) 
+                  saturate(${1 - flameIntensity})
+                  ${flameIntensity > 0.5 ? `blur(${(flameIntensity - 0.5) * 2}px)` : ''}
                 `.trim(),
               }}
             />
-            {/* Grain/noise overlay - increases with score */}
-            {flameIntensity > 0.3 && (
+            {/* Grain/noise overlay - starts earlier */}
+            {flameIntensity > 0.15 && (
               <div 
                 className="absolute inset-0 pointer-events-none mix-blend-overlay"
                 style={{
-                  opacity: Math.min(0.6, (flameIntensity - 0.3) * 0.8),
+                  opacity: Math.min(0.7, flameIntensity * 0.9),
                   backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
                 }}
               />
             )}
-            {/* Dark vignette overlay - increases with score */}
+            {/* Dark vignette overlay - more aggressive */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: `radial-gradient(circle, transparent 30%, rgba(0,0,0,${flameIntensity * 0.7}) 100%)`,
+                background: `radial-gradient(circle, transparent 20%, rgba(0,0,0,${flameIntensity * 0.9}) 100%)`,
               }}
             />
-            {/* Red tint for high scores */}
-            {flameIntensity > 0.7 && (
+            {/* Red/dark tint - starts earlier */}
+            {flameIntensity > 0.4 && (
               <div 
                 className="absolute inset-0 pointer-events-none mix-blend-multiply"
                 style={{
-                  backgroundColor: `rgba(139, 0, 0, ${(flameIntensity - 0.7) * 0.5})`,
+                  backgroundColor: `rgba(80, 0, 0, ${(flameIntensity - 0.4) * 0.7})`,
                 }}
               />
             )}
-            {/* Expression */}
-            <div className="absolute bottom-1 right-1 text-2xl">
-              {result.score > 80 ? '💀' : result.score > 60 ? '😵' : result.score > 40 ? '😰' : result.score > 20 ? '😅' : '😎'}
-            </div>
           </div>
         </div>
 
