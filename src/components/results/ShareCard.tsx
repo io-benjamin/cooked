@@ -94,7 +94,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             boxShadow: `0 0 80px ${tier.color}30`,
             position: 'relative',
           }}>
-            {/* Avatar */}
+            {/* Avatar - "Becoming Uncanny" effect */}
             <div style={{
               width: '100px',
               height: '100px',
@@ -102,6 +102,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               overflow: 'hidden',
               border: `3px solid ${tier.color}`,
               marginBottom: '8px',
+              position: 'relative',
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
@@ -111,9 +112,26 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  filter: `brightness(${1 - (result.score / 100) * 0.3}) sepia(${(result.score / 100) * 0.4})`,
+                  filter: `brightness(${1 - (result.score / 100) * 0.5}) contrast(${1 + (result.score / 100) * 0.4}) saturate(${1 - (result.score / 100) * 0.9})`,
                 }}
               />
+              {/* Dark vignette overlay */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: `radial-gradient(circle, transparent 30%, rgba(0,0,0,${(result.score / 100) * 0.7}) 100%)`,
+                pointerEvents: 'none',
+              }} />
+              {/* Red tint for high scores */}
+              {result.score > 70 && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: `rgba(139, 0, 0, ${((result.score - 70) / 30) * 0.4})`,
+                  mixBlendMode: 'multiply',
+                  pointerEvents: 'none',
+                }} />
+              )}
             </div>
             
             {/* Score */}
