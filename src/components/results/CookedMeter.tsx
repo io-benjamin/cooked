@@ -27,11 +27,14 @@ function getTier(score: number) {
 
 interface StatsData {
   overall: { avgScore: number; avgNetWorth: number; count: number } | null;
-  city: { avgScore: number; avgNetWorth: number; count: number } | null;
-  industry: { avgScore: number; count: number } | null;
+  city: { avgScore: number; avgNetWorth: number; count: number; name: string } | null;
+  industry: { avgScore: number; count: number; name: string } | null;
   ageGroup: { avgScore: number; count: number; range: string } | null;
+  percentile: number | null;
   totalUsers: number;
   minForComparison: number;
+  topCities?: { name: string; avgScore: number; count: number }[];
+  topIndustries?: { name: string; avgScore: number; count: number }[];
 }
 
 export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl }: CookedMeterProps) {
@@ -51,6 +54,7 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
           city: userCity,
           industry: userIndustry,
           age: String(userAge),
+          score: String(result.score),
         });
         const res = await fetch(`/api/stats?${params}`);
         const data = await res.json();
@@ -60,7 +64,7 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
       }
     }
     fetchStats();
-  }, [userCity, userIndustry, userAge]);
+  }, [userCity, userIndustry, userAge, result.score]);
 
   // Calculate comparison values from real data
   const totalUsers = stats?.totalUsers || 0;
@@ -69,10 +73,6 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   // Use city avg if available, otherwise overall avg
   const cityAvg = stats?.city?.avgScore ?? stats?.overall?.avgScore ?? null;
   const industryAvg = stats?.industry?.avgScore ?? null;
-  const overallAvg = stats?.overall?.avgScore ?? null;
-  
-  // Calculate comparison average
-  const comparisonAvg = cityAvg ?? overallAvg ?? 50;
   
   // Comparison context labels
   const cityCompareLabel = hasEnoughCityData ? userCity : 'all users';
@@ -319,45 +319,63 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
         </div>
       </div>
 
-      {/* === RANKING SECTION with Percentile Framing === */}
+      {/* === PERCENTILE & RANKING SECTION === */}
       <div className="glass rounded-3xl p-6">
-        <div className="text-center mb-2">
-          <div className="text-white/50 text-sm">
-            Compared to {hasEnoughCityData ? userCity : 'all users'}
-            {!hasEnoughCityData && totalUsers > 0 && (
-              <span className="block text-white/30 text-xs mt-1">
-                (not enough data in {userCity} yet)
-              </span>
-            )}
+        {/* Big percentile number */}
+        {stats?.percentile !== null && stats?.percentile !== undefined && (
+          <div className="text-center mb-4">
+            <div className="text-white/50 text-sm mb-1">You&apos;re doing better than</div>
+            <div className={`text-5xl font-black ${stats.percentile >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+              {stats.percentile}%
+            </div>
+            <div className="text-white/50 text-sm">of {totalUsers.toLocaleString()} people</div>
           </div>
-          <div className="text-4xl font-black text-white">
-            {totalUsers > 0 ? (
-              <>
-                {totalUsers.toLocaleString()} <span className="text-white/40 text-lg font-normal">submissions</span>
-              </>
-            ) : (
-              <span className="text-white/40 text-lg font-normal">Loading...</span>
-            )}
-          </div>
-        </div>
+        )}
+        
+        {/* Comparison cards */}
         {totalUsers > 0 && (
-          <div className="border-t border-white/10 pt-4 mt-4 space-y-2">
-            {comparisonAvg && (
-              <div className={`text-center text-lg ${result.score < comparisonAvg ? 'text-green-400' : result.score > comparisonAvg ? 'text-red-400' : 'text-yellow-400'}`}>
-                {result.score < comparisonAvg ? (
-                  <>You&apos;re <span className="font-bold">{comparisonAvg - result.score} points better</span> than the {cityCompareLabel} average</>
-                ) : result.score > comparisonAvg ? (
-                  <>You&apos;re <span className="font-bold">{result.score - comparisonAvg} points worse</span> than the {cityCompareLabel} average</>
-                ) : (
-                  <>You&apos;re exactly at the {cityCompareLabel} average</>
-                )}
-              </div>
-            )}
-            {avgNetWorth !== null && (
-              <div className="text-center text-white/50">
-                {cityCompareLabel} avg net worth: <span className={avgNetWorth >= 0 ? 'text-green-400' : 'text-red-400'}>${avgNetWorth.toLocaleString()}</span>
-              </div>
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+            {/* City comparison */}
+            <div className="bg-white/5 rounded-xl p-3 text-center">
+              <div className="text-xs text-white/40 mb-1">📍 {hasEnoughCityData ? userCity : 'All Users'}</div>
+              <div className="text-lg font-bold text-cyan-400">{cityAvg ?? '—'}% avg</div>
+              {cityAvg !== null && (
+                <div className={`text-xs ${result.score < cityAvg ? 'text-green-400' : 'text-red-400'}`}>
+                  {result.score < cityAvg ? `${cityAvg - result.score}pts better` : result.score > cityAvg ? `${result.score - cityAvg}pts worse` : 'at avg'}
+                </div>
+              )}
+              {!hasEnoughCityData && (
+                <div className="text-xs text-white/30">need 5+ in {userCity}</div>
+              )}
+            </div>
+            
+            {/* Industry comparison */}
+            <div className="bg-white/5 rounded-xl p-3 text-center">
+              <div className="text-xs text-white/40 mb-1">💼 {stats?.industry?.name?.split(' / ')[0] || 'Industry'}</div>
+              <div className="text-lg font-bold text-purple-400">{industryAvg ?? '—'}% avg</div>
+              {industryAvg !== null && (
+                <div className={`text-xs ${result.score < industryAvg ? 'text-green-400' : 'text-red-400'}`}>
+                  {result.score < industryAvg ? `${industryAvg - result.score}pts better` : result.score > industryAvg ? `${result.score - industryAvg}pts worse` : 'at avg'}
+                </div>
+              )}
+              {industryAvg === null && (
+                <div className="text-xs text-white/30">need 5+ in industry</div>
+              )}
+            </div>
+            
+            {/* Age group comparison */}
+            <div className="bg-white/5 rounded-xl p-3 text-center">
+              <div className="text-xs text-white/40 mb-1">🎂 Ages {stats?.ageGroup?.range || `${userAge-3}-${userAge+3}`}</div>
+              <div className="text-lg font-bold text-orange-400">{stats?.ageGroup?.avgScore ?? '—'}% avg</div>
+              {stats?.ageGroup?.avgScore !== undefined && (
+                <div className={`text-xs ${result.score < stats.ageGroup.avgScore ? 'text-green-400' : 'text-red-400'}`}>
+                  {result.score < stats.ageGroup.avgScore ? `${stats.ageGroup.avgScore - result.score}pts better` : result.score > stats.ageGroup.avgScore ? `${result.score - stats.ageGroup.avgScore}pts worse` : 'at avg'}
+                </div>
+              )}
+              {!stats?.ageGroup && (
+                <div className="text-xs text-white/30">need 5+ in age range</div>
+              )}
+            </div>
           </div>
         )}
       </div>

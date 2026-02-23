@@ -39,12 +39,12 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
   const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
   const totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0);
   
-  // Cost of living adjustment (for future use)
+  // Cost of living adjustment - normalize rent burden relative to city costs
   const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
-  void colIndex; // TODO: incorporate into scoring
+  const colMultiplier = 100 / colIndex; // Higher COL = more forgiving on rent
   
   // Calculate individual scores (0-100, higher = more cooked)
-  const breakdown = calculateBreakdown(inputs, totalIncome, monthlyIncome, totalDebt);
+  const breakdown = calculateBreakdown(inputs, totalIncome, monthlyIncome, totalDebt, colMultiplier);
   
   // Calculate financial metrics for leaderboard
   const metrics: FinancialMetrics = {
@@ -100,15 +100,18 @@ function calculateBreakdown(
   inputs: UserInputs,
   totalIncome: number,
   monthlyIncome: number,
-  totalDebt: number
+  totalDebt: number,
+  colMultiplier: number = 1
 ): ScoreBreakdown {
-  // Rent score (0-100)
+  // Rent score (0-100) - adjusted for cost of living
+  // In high COL areas, higher rent ratios are more acceptable
   const rentRatio = inputs.monthlyRent / monthlyIncome;
+  const adjustedRentRatio = rentRatio * colMultiplier; // Lower in high COL cities
   let rentScore = 0;
-  if (rentRatio > 0.5) rentScore = 100;
-  else if (rentRatio > 0.4) rentScore = 80;
-  else if (rentRatio > 0.3) rentScore = 50;
-  else if (rentRatio > 0.25) rentScore = 30;
+  if (adjustedRentRatio > 0.5) rentScore = 100;
+  else if (adjustedRentRatio > 0.4) rentScore = 80;
+  else if (adjustedRentRatio > 0.3) rentScore = 50;
+  else if (adjustedRentRatio > 0.25) rentScore = 30;
   else rentScore = 10;
   
   // Debt score (0-100)
