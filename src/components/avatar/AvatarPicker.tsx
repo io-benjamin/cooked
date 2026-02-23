@@ -8,18 +8,19 @@ interface AvatarPickerProps {
 }
 
 const STYLES = [
-  { id: 'style1', seed: 'Felix' },
-  { id: 'style2', seed: 'Aneka' },
-  { id: 'style3', seed: 'Jasper' },
-  { id: 'style4', seed: 'Milo' },
-  { id: 'style5', seed: 'Luna' },
-  { id: 'style6', seed: 'Zara' },
-  { id: 'style7', seed: 'Oscar' },
-  { id: 'style8', seed: 'Ruby' },
-  { id: 'style9', seed: 'Kai' },
-  { id: 'style10', seed: 'Nina' },
-  { id: 'style11', seed: 'Leo' },
-  { id: 'style12', seed: 'Maya' },
+  // Alternating to show diversity upfront
+  { id: 'style1', seed: 'Sophia' },
+  { id: 'style2', seed: 'Marcus' },
+  { id: 'style3', seed: 'Luna' },
+  { id: 'style4', seed: 'Jasper' },
+  { id: 'style5', seed: 'Zara' },
+  { id: 'style6', seed: 'Felix' },
+  { id: 'style7', seed: 'Maya' },
+  { id: 'style8', seed: 'Oscar' },
+  { id: 'style9', seed: 'Nina' },
+  { id: 'style10', seed: 'Kai' },
+  { id: 'style11', seed: 'Ruby' },
+  { id: 'style12', seed: 'Leo' },
 ];
 
 const BACKGROUNDS = [
