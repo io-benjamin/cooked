@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalculatorForm } from '@/components/calculator/CalculatorForm';
 import { CookedMeter } from '@/components/results/CookedMeter';
@@ -17,6 +17,16 @@ export default function Home() {
   const [userInputs, setUserInputs] = useState<UserInputs | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [previousSubmission, setPreviousSubmission] = useState<{ id: string; score: number } | null>(null);
+
+  // Check for existing submission on mount
+  useEffect(() => {
+    const id = localStorage.getItem('cooked_submission_id');
+    const score = localStorage.getItem('cooked_submission_score');
+    if (id && score) {
+      setPreviousSubmission({ id, score: parseInt(score) });
+    }
+  }, []);
 
   const handleAvatarComplete = (url: string) => {
     setAvatarUrl(url);
@@ -32,9 +42,9 @@ export default function Home() {
     setStep('results');
     setIsLoading(false);
 
-    // Submit to Supabase (fire and forget - don't block UI)
+    // Submit to Supabase and save ID to localStorage
     try {
-      await fetch('/api/submissions', {
+      const res = await fetch('/api/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -51,6 +61,11 @@ export default function Home() {
           isPublic: true,
         }),
       });
+      const data = await res.json();
+      if (data?.id) {
+        localStorage.setItem('cooked_submission_id', data.id);
+        localStorage.setItem('cooked_submission_score', String(calculatedResult.score));
+      }
     } catch {
       // Silently fail - don't break UX if Supabase isn't configured
     }
@@ -105,6 +120,22 @@ export default function Home() {
           /* Hero Section */
           <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
             <div className="space-y-8 max-w-3xl mx-auto">
+              {/* Returning visitor banner */}
+              {previousSubmission && (
+                <Link 
+                  href={`/results/${previousSubmission.id}`}
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-2xl hover:border-orange-500/50 transition-all group"
+                >
+                  <span className="text-2xl">🔥</span>
+                  <span className="text-white/80">
+                    You&apos;re <span className="font-bold text-orange-400">{previousSubmission.score}% cooked</span>
+                  </span>
+                  <span className="text-white/50 group-hover:text-white/80 transition-colors">
+                    View results →
+                  </span>
+                </Link>
+              )}
+
               {/* Main headline */}
               <div className="space-y-4">
                 <LiveCounter />
