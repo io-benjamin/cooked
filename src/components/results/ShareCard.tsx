@@ -29,6 +29,11 @@ const TIER_INFO: Record<string, { name: string; emoji: string; color: string; bg
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
   ({ result, avatarUrl, userCity }, ref) => {
     const tier = TIER_INFO[result.tier] || TIER_INFO['simmering'];
+    
+    // Convert DiceBear SVG to PNG for html2canvas compatibility
+    const pngAvatarUrl = avatarUrl.includes('dicebear.com') 
+      ? avatarUrl.replace('/svg?', '/png?').replace('&size=200', '&size=200&scale=100')
+      : avatarUrl;
 
     return (
       <div
@@ -107,13 +112,15 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={avatarUrl} 
+                src={pngAvatarUrl} 
                 alt="" 
+                width={100}
+                height={100}
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain',
-                  objectPosition: 'center',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
                   filter: `brightness(${1 - (result.score / 100) * 0.5}) contrast(${1 + (result.score / 100) * 0.4}) saturate(${1 - (result.score / 100) * 0.9})`,
                 }}
               />
