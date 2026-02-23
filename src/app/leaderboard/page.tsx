@@ -25,7 +25,6 @@ const TIER_INFO: Record<string, { emoji: string; color: string }> = {
   'sauteed': { emoji: '🔥', color: 'text-orange-400' },
   'well-done': { emoji: '☠️', color: 'text-red-400' },
   'charred': { emoji: '💀', color: 'text-gray-400' },
-  // Legacy tier names
   'medium-rare': { emoji: '🍳', color: 'text-green-400' },
   'medium': { emoji: '🥘', color: 'text-yellow-400' },
   'charcoal': { emoji: '☠️', color: 'text-red-400' },
@@ -33,55 +32,99 @@ const TIER_INFO: Record<string, { emoji: string; color: string }> = {
 };
 
 type FilterType = 'all' | 'city' | 'industry' | 'age';
+const PAGE_SIZE = 25;
 
 export default function LeaderboardPage() {
-  const [data, setData] = useState<Submission[]>([]);
+  const [allData, setAllData] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
   const [selectedAgeRange, setSelectedAgeRange] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [userSubmission, setUserSubmission] = useState<{ id: string; rank: number; score: number } | null>(null);
 
+  // Check for user's submission on mount
   useEffect(() => {
+    const savedId = localStorage.getItem('cooked_submission_id');
+    if (savedId) {
+      const savedScore = localStorage.getItem('cooked_submission_score');
+      setUserSubmission({ 
+        id: savedId, 
+        rank: 0, // Will be calculated after data loads
+        score: savedScore ? parseInt(savedScore) : 0 
+      });
+    }
+  }, []);
+
+  // Fetch all data once
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/leaderboard');
+        const json = await res.json();
+        const sorted = Array.isArray(json) ? json : [];
+        setAllData(sorted);
+        
+        // Find user's rank
+        const savedId = localStorage.getItem('cooked_submission_id');
+        if (savedId) {
+          const userIndex = sorted.findIndex((s: Submission) => s.id === savedId);
+          if (userIndex !== -1) {
+            setUserSubmission(prev => prev ? { ...prev, rank: userIndex + 1 } : null);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch leaderboard:', e);
+        setAllData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchData();
+  }, []);
+
+  // Filter data
+  const filteredData = allData.filter(entry => {
+    if (filter === 'city' && selectedCity && entry.city !== selectedCity) return false;
+    if (filter === 'industry' && selectedIndustry && entry.industry !== selectedIndustry) return false;
+    if (filter === 'age' && selectedAgeRange) {
+      const [min, max] = selectedAgeRange.split('-').map(n => parseInt(n));
+      if (entry.age < min || entry.age > max) return false;
+    }
+    return true;
+  });
+
+  // Paginate
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setPage(1);
   }, [filter, selectedCity, selectedIndustry, selectedAgeRange]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      let url = '/api/leaderboard?limit=50';
-      if (filter === 'city' && selectedCity) {
-        url += `&filter=city&value=${encodeURIComponent(selectedCity)}`;
-      } else if (filter === 'industry' && selectedIndustry) {
-        url += `&filter=industry&value=${encodeURIComponent(selectedIndustry)}`;
-      } else if (filter === 'age' && selectedAgeRange) {
-        url += `&filter=age&value=${encodeURIComponent(selectedAgeRange)}`;
-      }
-      const res = await fetch(url);
-      const json = await res.json();
-      setData(Array.isArray(json) ? json : []);
-    } catch (e) {
-      console.error('Failed to fetch leaderboard:', e);
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cities = Array.from(new Set(data.map(d => d.city))).sort();
-  const industries = Array.from(new Set(data.map(d => d.industry))).sort();
+  const cities = Array.from(new Set(allData.map(d => d.city))).sort();
+  const industries = Array.from(new Set(allData.map(d => d.industry))).sort();
   const ageRanges = ['18-24', '25-30', '31-40', '41-100'];
 
-  // Calculate stats from real data
+  // Calculate stats from filtered data
   const stats = {
-    totalSubmissions: data.length,
-    avgScore: data.length > 0 ? Math.round(data.reduce((sum, d) => sum + d.score, 0) / data.length) : 0,
-    mostCookedCity: data.length > 0 ? data.sort((a, b) => b.score - a.score)[0]?.city || '-' : '-',
-    mostCookedIndustry: data.length > 0 ? data.sort((a, b) => b.score - a.score)[0]?.industry || '-' : '-',
+    totalSubmissions: filteredData.length,
+    avgScore: filteredData.length > 0 ? Math.round(filteredData.reduce((sum, d) => sum + d.score, 0) / filteredData.length) : 0,
+    mostCookedCity: allData.length > 0 ? allData[0]?.city || '-' : '-',
+    mostCookedIndustry: allData.length > 0 ? allData[0]?.industry || '-' : '-',
+  };
+
+  const scrollToUser = () => {
+    if (!userSubmission || userSubmission.rank === 0) return;
+    const userPage = Math.ceil(userSubmission.rank / PAGE_SIZE);
+    setPage(userPage);
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] relative overflow-hidden">
+    <main className="min-h-screen bg-[#050505] relative overflow-hidden pb-24">
       {/* Background */}
       <div className="fixed inset-0 grid-bg opacity-50" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-orange-500/10 via-red-500/5 to-transparent blur-3xl pointer-events-none" />
@@ -215,7 +258,7 @@ export default function LeaderboardPage() {
             <div className="text-4xl mb-4 animate-pulse">🔥</div>
             <div className="text-white/50">Loading submissions...</div>
           </div>
-        ) : data.length === 0 ? (
+        ) : paginatedData.length === 0 ? (
           <div className="glass rounded-2xl p-12 text-center">
             <div className="text-4xl mb-4">🍳</div>
             <div className="text-white/70 text-xl mb-2">No submissions yet!</div>
@@ -229,24 +272,26 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {data.map((entry, index) => {
+            {paginatedData.map((entry, index) => {
               const tierInfo = TIER_INFO[entry.tier] || TIER_INFO['simmering'];
-              const isTop3 = index < 3;
+              const globalRank = (page - 1) * PAGE_SIZE + index + 1;
+              const isTop3 = globalRank <= 3;
+              const isCurrentUser = userSubmission?.id === entry.id;
               
               return (
                 <div 
                   key={entry.id}
                   className={`glass rounded-2xl p-4 hover:bg-white/5 transition-colors ${
                     isTop3 ? 'border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-transparent' : ''
-                  }`}
+                  } ${isCurrentUser ? 'ring-2 ring-cyan-500' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     {/* Rank */}
                     <div className="flex-shrink-0 w-10 text-center">
                       {isTop3 ? (
-                        <span className="text-3xl">{['🥇', '🥈', '🥉'][index]}</span>
+                        <span className="text-3xl">{['🥇', '🥈', '🥉'][globalRank - 1]}</span>
                       ) : (
-                        <span className="text-xl text-white/30 font-bold">{index + 1}</span>
+                        <span className="text-xl text-white/30 font-bold">{globalRank}</span>
                       )}
                     </div>
                     
@@ -268,16 +313,15 @@ export default function LeaderboardPage() {
 
                     {/* Main Content */}
                     <div className="flex-1 min-w-0">
-                      {/* Score + Basic Info */}
                       <div className="flex flex-wrap items-center gap-2 mb-3">
                         <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
+                        {isCurrentUser && <span className="px-2 py-0.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-full">You</span>}
                         <span className="text-white/40">•</span>
                         <span className="text-white/60 text-sm">{entry.age}yo</span>
                         <span className="text-white/40">•</span>
                         <span className="text-white/60 text-sm truncate">{entry.city}</span>
                       </div>
                       
-                      {/* Financial Metrics */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                         <div className={`px-3 py-2 rounded-lg ${entry.dti > 40 ? 'bg-red-500/20 text-red-400' : entry.dti > 25 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
                           <div className="text-lg font-bold">{entry.dti}%</div>
@@ -297,7 +341,6 @@ export default function LeaderboardPage() {
                         </div>
                       </div>
                       
-                      {/* Industry tag */}
                       <div className="flex flex-wrap gap-2 text-xs">
                         <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.industry}</span>
                       </div>
@@ -306,6 +349,29 @@ export default function LeaderboardPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-8">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              ← Prev
+            </button>
+            <span className="text-white/50">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Next →
+            </button>
           </div>
         )}
 
@@ -321,14 +387,40 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
+      {/* Sticky User Rank Footer */}
+      {userSubmission && userSubmission.rank > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-4">
+          <div className="container mx-auto px-4 pb-4">
+            <button
+              onClick={scrollToUser}
+              className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/10 transition-colors border border-cyan-500/30"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📍</span>
+                <div className="text-left">
+                  <div className="text-sm text-white/50">Your Ranking</div>
+                  <div className="text-xl font-bold text-white">
+                    #{userSubmission.rank} <span className="text-white/40 text-sm font-normal">of {allData.length}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-orange-400 font-bold">{userSubmission.score}% cooked</span>
+                <span className="text-white/50">→</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/5 mt-12">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-white/30">
             <span>🔥 am i cooked? © 2026</span>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-white/60 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white/60 transition-colors">Terms</a>
+              <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
             </div>
           </div>
         </div>
