@@ -258,9 +258,8 @@ export default function Home() {
               <span>am i cooked? © 2026</span>
             </div>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-white/60 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white/60 transition-colors">Terms</a>
-              <a href="#" className="hover:text-white/60 transition-colors">Twitter</a>
+              <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
             </div>
           </div>
         </div>
