@@ -17,6 +17,7 @@ interface Submission {
   savings_rate: number;
   net_worth: number;
   avatar_url: string | null;
+  email: string | null;
 }
 
 const TIER_INFO: Record<string, { name: string; emoji: string; color: string; bgColor: string }> = {
@@ -39,6 +40,9 @@ export default function ResultsPage() {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [hasEmail, setHasEmail] = useState(false);
 
   useEffect(() => {
     async function fetchSubmission() {
@@ -50,6 +54,9 @@ export default function ResultsPage() {
         }
         const data = await res.json();
         setSubmission(data);
+        if (data.email) {
+          setHasEmail(true);
+        }
       } catch {
         setError('Failed to load results');
       } finally {
@@ -58,6 +65,29 @@ export default function ResultsPage() {
     }
     fetchSubmission();
   }, [id]);
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) return;
+    
+    setEmailStatus('submitting');
+    try {
+      const res = await fetch(`/api/submissions/${id}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (res.ok) {
+        setEmailStatus('success');
+        setHasEmail(true);
+      } else {
+        setEmailStatus('error');
+      }
+    } catch {
+      setEmailStatus('error');
+    }
+  };
 
   if (loading) {
     return (
@@ -211,17 +241,51 @@ export default function ResultsPage() {
             </div>
           </div>
 
-          {/* Info Card */}
+          {/* Email Capture / Tips Coming Soon */}
           <div className="glass rounded-2xl p-5 border-l-4 border-orange-500/50">
-            <div className="flex items-start gap-3">
-              <div className="text-2xl">💡</div>
-              <div>
-                <div className="font-semibold text-white">Personalized tips coming soon</div>
-                <div className="text-sm text-white/50">
-                  We&apos;re working on recommendations based on your specific situation. Check back later!
+            {hasEmail || emailStatus === 'success' ? (
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">✅</div>
+                <div>
+                  <div className="font-semibold text-white">You&apos;re on the list!</div>
+                  <div className="text-sm text-white/50">
+                    We&apos;ll email you when personalized tips are ready for your situation.
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="text-2xl">💡</div>
+                  <div>
+                    <div className="font-semibold text-white">Get personalized tips</div>
+                    <div className="text-sm text-white/50">
+                      We&apos;re building recommendations based on your specific situation. Drop your email to get notified.
+                    </div>
+                  </div>
+                </div>
+                <form onSubmit={handleEmailSubmit} className="flex gap-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="flex-1 h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-orange-500 focus:outline-none"
+                    disabled={emailStatus === 'submitting'}
+                  />
+                  <button
+                    type="submit"
+                    disabled={emailStatus === 'submitting' || !email}
+                    className="h-12 px-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {emailStatus === 'submitting' ? '...' : 'Notify Me'}
+                  </button>
+                </form>
+                {emailStatus === 'error' && (
+                  <p className="text-red-400 text-sm mt-2">Something went wrong. Try again?</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
