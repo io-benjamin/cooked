@@ -25,23 +25,60 @@ function getTier(score: number) {
   return TIERS.find(t => score <= t.max) || TIERS[TIERS.length - 1];
 }
 
+interface StatsData {
+  overall: { avgScore: number; avgNetWorth: number; count: number } | null;
+  city: { avgScore: number; avgNetWorth: number; count: number } | null;
+  industry: { avgScore: number; count: number } | null;
+  ageGroup: { avgScore: number; count: number; range: string } | null;
+  totalUsers: number;
+  minForComparison: number;
+}
+
 export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [stats, setStats] = useState<StatsData | null>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
   const tier = getTier(result.score);
   const flameIntensity = result.score / 100;
 
-  // Mock data for rankings (will come from Supabase later)
-  const totalUsers = 9120;
-  const userRank = Math.floor(totalUsers * (result.percentile / 100));
-  const aheadOf = 100 - result.percentile;
-  const savingsGap = (Math.random() * 3 + 0.5).toFixed(1); // Mock
+  // Fetch real stats
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const params = new URLSearchParams({
+          city: userCity,
+          industry: userIndustry,
+          age: String(userAge),
+        });
+        const res = await fetch(`/api/stats?${params}`);
+        const data = await res.json();
+        setStats(data);
+      } catch {
+        // Stats failed to load, will show fallback UI
+      }
+    }
+    fetchStats();
+  }, [userCity, userIndustry, userAge]);
+
+  // Calculate comparison values from real data
+  const totalUsers = stats?.totalUsers || 0;
+  const hasEnoughCityData = stats?.city !== null;
+  const hasEnoughIndustryData = stats?.industry !== null;
   
-  // Mock averages for meter markers (will come from real data)
-  const cityAvg = Math.min(85, Math.max(25, result.score + (Math.random() * 20 - 10))); // City average
-  const industryAvg = Math.min(80, Math.max(20, result.score + (Math.random() * 30 - 15))); // Industry average
+  // Use city avg if available, otherwise overall avg
+  const cityAvg = stats?.city?.avgScore ?? stats?.overall?.avgScore ?? null;
+  const industryAvg = stats?.industry?.avgScore ?? null;
+  const overallAvg = stats?.overall?.avgScore ?? null;
+  
+  // Calculate percentile based on score vs average
+  const comparisonAvg = cityAvg ?? overallAvg ?? 50;
+  const aheadOf = result.score < comparisonAvg ? Math.round((1 - result.score / comparisonAvg) * 50 + 50) : Math.round((1 - (result.score - comparisonAvg) / (100 - comparisonAvg)) * 50);
+  
+  // Comparison context labels
+  const cityCompareLabel = hasEnoughCityData ? userCity : 'all users';
+  const avgNetWorth = stats?.city?.avgNetWorth ?? stats?.overall?.avgNetWorth ?? null;
 
   useEffect(() => {
     setTimeout(() => setShowContent(true), 300);
@@ -79,7 +116,10 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   };
 
   const handleShare = async () => {
-    const text = `I'm ${result.score}% cooked 🔥\n\nRanked #${userRank.toLocaleString()} in ${userCity}\n\nFind out how cooked you are: financiallycooked.com`;
+    const comparisonText = hasEnoughCityData 
+      ? `Compared to ${userCity} average: ${result.score < (cityAvg || 0) ? 'better' : 'worse'}`
+      : `Out of ${totalUsers} submissions`;
+    const text = `I'm ${result.score}% cooked 🔥\n\n${comparisonText}\n\nFind out how cooked you are: financiallycooked.com`;
     
     if (navigator.share && navigator.canShare) {
       setIsGenerating(true);
@@ -221,17 +261,21 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
                   background: `linear-gradient(90deg, #22d3ee 0%, #4ade80 20%, #facc15 40%, #fb923c 60%, #f87171 80%, #a1a1aa 100%)`
                 }}
               />
-              {/* City avg marker */}
-              <div 
-                className="absolute top-0 h-full w-0.5 bg-cyan-400"
-                style={{ left: `${cityAvg}%` }}
-              />
+              {/* City/Overall avg marker */}
+              {cityAvg !== null && (
+                <div 
+                  className="absolute top-0 h-full w-0.5 bg-cyan-400"
+                  style={{ left: `${cityAvg}%` }}
+                />
+              )}
               {/* Industry avg marker */}
-              <div 
-                className="absolute top-0 h-full w-0.5 bg-purple-400"
-                style={{ left: `${industryAvg}%` }}
-              />
-              {/* Top 10% marker */}
+              {industryAvg !== null && (
+                <div 
+                  className="absolute top-0 h-full w-0.5 bg-purple-400"
+                  style={{ left: `${industryAvg}%` }}
+                />
+              )}
+              {/* Top 10% marker (15 score = raw tier) */}
               <div 
                 className="absolute top-0 h-full w-0.5 bg-green-400"
                 style={{ left: '15%' }}
@@ -251,19 +295,23 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               <span>💀 Charred</span>
             </div>
             {/* Legend below */}
-            <div className="flex justify-center gap-4 mt-3 text-xs">
+            <div className="flex justify-center gap-4 mt-3 text-xs flex-wrap">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-white"></div>
                 <span className="text-white/60">You</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
-                <span className="text-white/60">{userCity} avg</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-purple-400"></div>
-                <span className="text-white/60">Industry</span>
-              </div>
+              {cityAvg !== null && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                  <span className="text-white/60">{cityCompareLabel} avg</span>
+                </div>
+              )}
+              {industryAvg !== null && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                  <span className="text-white/60">Industry</span>
+                </div>
+              )}
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-green-400"></div>
                 <span className="text-white/60">Top 10%</span>
@@ -276,19 +324,44 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
       {/* === RANKING SECTION with Percentile Framing === */}
       <div className="glass rounded-3xl p-6">
         <div className="text-center mb-2">
-          <div className="text-white/50 text-sm">Your Ranking in {userCity}</div>
+          <div className="text-white/50 text-sm">
+            Compared to {hasEnoughCityData ? userCity : 'all users'}
+            {!hasEnoughCityData && totalUsers > 0 && (
+              <span className="block text-white/30 text-xs mt-1">
+                (not enough data in {userCity} yet)
+              </span>
+            )}
+          </div>
           <div className="text-4xl font-black text-white">
-            #{userRank.toLocaleString()} <span className="text-white/40 text-lg font-normal">of {totalUsers.toLocaleString()}</span>
+            {totalUsers > 0 ? (
+              <>
+                {totalUsers.toLocaleString()} <span className="text-white/40 text-lg font-normal">submissions</span>
+              </>
+            ) : (
+              <span className="text-white/40 text-lg font-normal">Loading...</span>
+            )}
           </div>
         </div>
-        <div className="border-t border-white/10 pt-4 mt-4 space-y-2">
-          <div className={`text-center text-lg ${aheadOf >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-            You&apos;re {aheadOf >= 50 ? 'ahead of' : 'behind'} <span className="font-bold">{aheadOf >= 50 ? aheadOf : 100 - aheadOf}%</span> of {userAge}-year-olds in {userCity}
+        {totalUsers > 0 && (
+          <div className="border-t border-white/10 pt-4 mt-4 space-y-2">
+            {comparisonAvg && (
+              <div className={`text-center text-lg ${result.score < comparisonAvg ? 'text-green-400' : result.score > comparisonAvg ? 'text-red-400' : 'text-yellow-400'}`}>
+                {result.score < comparisonAvg ? (
+                  <>You&apos;re <span className="font-bold">{comparisonAvg - result.score} points better</span> than the {cityCompareLabel} average</>
+                ) : result.score > comparisonAvg ? (
+                  <>You&apos;re <span className="font-bold">{result.score - comparisonAvg} points worse</span> than the {cityCompareLabel} average</>
+                ) : (
+                  <>You&apos;re exactly at the {cityCompareLabel} average</>
+                )}
+              </div>
+            )}
+            {avgNetWorth !== null && (
+              <div className="text-center text-white/50">
+                {cityCompareLabel} avg net worth: <span className={avgNetWorth >= 0 ? 'text-green-400' : 'text-red-400'}>${avgNetWorth.toLocaleString()}</span>
+              </div>
+            )}
           </div>
-          <div className="text-center text-orange-400">
-            You&apos;re behind {userIndustry}s by <span className="font-bold">{savingsGap} years</span> of savings
-          </div>
-        </div>
+        )}
       </div>
 
       {/* === WHY YOU'RE COOKED - Breakdown Cards === */}
@@ -305,9 +378,11 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               ${Math.abs(result.metrics.netWorth).toLocaleString()}
               {result.metrics.netWorth < 0 && <span className="text-sm"> debt</span>}
             </div>
-            <div className="text-white/40 text-xs mt-1">
-              City avg: ${Math.round(result.metrics.netWorth * 1.4 + 5000).toLocaleString()}
-            </div>
+            {avgNetWorth !== null && (
+              <div className="text-white/40 text-xs mt-1">
+                {cityCompareLabel} avg: ${avgNetWorth.toLocaleString()}
+              </div>
+            )}
           </div>
           
           {/* Debt Ratio */}
@@ -399,8 +474,6 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
           avatarUrl={avatarUrl} 
           userCity={userCity}
           userAge={userAge}
-          userRank={userRank}
-          totalUsers={totalUsers}
         />
       </div>
     </div>
