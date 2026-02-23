@@ -7,14 +7,18 @@ export async function GET(request: Request) {
   
   const filter = searchParams.get('filter') || 'all';
   const value = searchParams.get('value') || '';
-  const limit = parseInt(searchParams.get('limit') || '50');
+  const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : null;
 
   let query = supabase
     .from('submissions')
     .select('*')
     .eq('is_public', true)
-    .order('score', { ascending: false })
-    .limit(limit);
+    .order('score', { ascending: false });
+
+  // Only apply limit if specified
+  if (limit) {
+    query = query.limit(limit);
+  }
 
   // Apply filters
   if (filter === 'city' && value) {
