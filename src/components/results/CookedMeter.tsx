@@ -42,9 +42,46 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   const [showContent, setShowContent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [email, setEmail] = useState('');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
   const tier = getTier(result.score);
   const flameIntensity = result.score / 100;
+
+  // Get submission ID from localStorage (set after submission)
+  useEffect(() => {
+    const checkForId = () => {
+      const id = localStorage.getItem('cooked_submission_id');
+      if (id) setSubmissionId(id);
+    };
+    // Check immediately and after a delay (in case submission is still processing)
+    checkForId();
+    const timer = setTimeout(checkForId, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@') || !submissionId) return;
+    
+    setEmailStatus('submitting');
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (res.ok) {
+        setEmailStatus('success');
+      } else {
+        setEmailStatus('error');
+      }
+    } catch {
+      setEmailStatus('error');
+    }
+  };
 
   // Fetch real stats
   useEffect(() => {
@@ -458,6 +495,53 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
       <div className="glass rounded-3xl p-6 text-center">
         <div className="text-4xl mb-3">{tier.emoji}</div>
         <p className="text-xl text-white/70 italic">&ldquo;{result.roast}&rdquo;</p>
+      </div>
+
+      {/* === EMAIL CAPTURE === */}
+      <div className="glass rounded-2xl p-5 border-l-4 border-orange-500/50">
+        {emailStatus === 'success' ? (
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">✅</div>
+            <div>
+              <div className="font-semibold text-white">You&apos;re on the list!</div>
+              <div className="text-sm text-white/50">
+                We&apos;ll email you when personalized tips are ready for your situation.
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="text-2xl">💡</div>
+              <div>
+                <div className="font-semibold text-white">Want tips to get uncooked?</div>
+                <div className="text-sm text-white/50">
+                  We&apos;re building personalized recommendations. Drop your email to get notified.
+                </div>
+              </div>
+            </div>
+            <form onSubmit={handleEmailSubmit} className="flex gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="flex-1 h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-orange-500 focus:outline-none"
+                disabled={emailStatus === 'submitting' || !submissionId}
+              />
+              <button
+                type="submit"
+                disabled={emailStatus === 'submitting' || !email || !submissionId}
+                className="h-12 px-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+              >
+                {emailStatus === 'submitting' ? '...' : 'Notify Me'}
+              </button>
+            </form>
+            {emailStatus === 'error' && (
+              <p className="text-red-400 text-sm mt-2">Something went wrong. Try again?</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* === SHARE BUTTON (Sticky on mobile) === */}
