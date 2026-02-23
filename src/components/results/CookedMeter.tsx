@@ -65,16 +65,14 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   // Calculate comparison values from real data
   const totalUsers = stats?.totalUsers || 0;
   const hasEnoughCityData = stats?.city !== null;
-  const hasEnoughIndustryData = stats?.industry !== null;
   
   // Use city avg if available, otherwise overall avg
   const cityAvg = stats?.city?.avgScore ?? stats?.overall?.avgScore ?? null;
   const industryAvg = stats?.industry?.avgScore ?? null;
   const overallAvg = stats?.overall?.avgScore ?? null;
   
-  // Calculate percentile based on score vs average
+  // Calculate comparison average
   const comparisonAvg = cityAvg ?? overallAvg ?? 50;
-  const aheadOf = result.score < comparisonAvg ? Math.round((1 - result.score / comparisonAvg) * 50 + 50) : Math.round((1 - (result.score - comparisonAvg) / (100 - comparisonAvg)) * 50);
   
   // Comparison context labels
   const cityCompareLabel = hasEnoughCityData ? userCity : 'all users';

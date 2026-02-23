@@ -69,22 +69,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Calculate user's rank in their city (or overall)
-  let rank = null;
-  let rankTotal = null;
-  let rankContext = 'overall';
-  
-  if (cityStats && city) {
-    const citySubmissions = allSubmissions
-      .filter(s => s.city === city)
-      .sort((a, b) => a.score - b.score);
-    rankTotal = citySubmissions.length;
-    rankContext = city;
-  } else {
-    const sorted = [...allSubmissions].sort((a, b) => a.score - b.score);
-    rankTotal = sorted.length;
-  }
-
   return NextResponse.json({
     overall: {
       ...overall,
@@ -94,7 +78,6 @@ export async function GET(request: Request) {
     industry: industryStats,
     ageGroup: ageGroupStats,
     totalUsers: allSubmissions.length,
-    rankContext,
     minForComparison: MIN_FOR_CITY_COMPARISON,
   });
 }
