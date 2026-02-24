@@ -1,40 +1,33 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+const BATCH_SIZE = 1000;
+
+export async function GET() {
   const supabase = createClient();
-  const { searchParams } = new URL(request.url);
-  
-  const filter = searchParams.get('filter') || 'all';
-  const value = searchParams.get('value') || '';
-  const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : null;
 
-  let query = supabase
-    .from('submissions')
-    .select('*')
-    .eq('is_public', true)
-    .order('score', { ascending: false });
+  // Supabase/PostgREST defaults to a max of 1000 rows per request.
+  // Fetch in batches of 1000 until all records are retrieved.
+  const allData: Record<string, unknown>[] = [];
+  let offset = 0;
 
-  // Only apply limit if specified
-  if (limit) {
-    query = query.limit(limit);
+  while (true) {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('id, created_at, age, city, industry, score, tier, dti, rent_burden, savings_rate, net_worth, avatar_url')
+      .eq('is_public', true)
+      .order('score', { ascending: false })
+      .range(offset, offset + BATCH_SIZE - 1);
+
+    if (error || !data || data.length === 0) break;
+
+    allData.push(...data);
+
+    // If we got fewer than BATCH_SIZE, we've reached the end
+    if (data.length < BATCH_SIZE) break;
+
+    offset += BATCH_SIZE;
   }
 
-  // Apply filters
-  if (filter === 'city' && value) {
-    query = query.eq('city', value);
-  } else if (filter === 'industry' && value) {
-    query = query.eq('industry', value);
-  } else if (filter === 'age' && value) {
-    const [min, max] = value.split('-').map(n => parseInt(n) || 100);
-    query = query.gte('age', min).lte('age', max);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return NextResponse.json(data || []);
+  return NextResponse.json(allData);
 }

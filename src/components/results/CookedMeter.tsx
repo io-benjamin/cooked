@@ -10,6 +10,7 @@ interface CookedMeterProps {
   userAge: number;
   userIndustry: string;
   avatarUrl: string;
+  emailCaptured?: boolean;
 }
 
 const TIERS = [
@@ -37,7 +38,7 @@ interface StatsData {
   topIndustries?: { name: string; avgScore: number; count: number }[];
 }
 
-export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl }: CookedMeterProps) {
+export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl, emailCaptured = false }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -106,6 +107,9 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   // Calculate comparison values from real data
   const totalUsers = stats?.totalUsers || 0;
   const hasEnoughCityData = stats?.city !== null;
+  const approxRank = stats?.percentile !== null && stats?.percentile !== undefined && totalUsers > 0
+    ? Math.max(1, Math.round((1 - (stats.percentile || 0) / 100) * totalUsers))
+    : null;
   
   // Use city avg if available, otherwise overall avg
   const cityAvg = stats?.city?.avgScore ?? stats?.overall?.avgScore ?? null;
@@ -188,12 +192,21 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
       {/* === HERO SECTION === */}
       <div className="glass rounded-3xl p-8 text-center relative overflow-hidden">
         {/* Background glow */}
-        <div 
+        <div
           className="absolute inset-0 opacity-40"
-          style={{ 
-            background: `radial-gradient(ellipse at center, ${tier.color}30 0%, transparent 70%)` 
+          style={{
+            background: `radial-gradient(ellipse at center, ${tier.color}30 0%, transparent 70%)`
           }}
         />
+
+        {/* Share button */}
+        <button
+          onClick={handleShare}
+          disabled={isGenerating}
+          className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white text-xs font-medium transition-all disabled:opacity-50"
+        >
+          {isGenerating ? '...' : '🔗 Share'}
+        </button>
         
         {/* Avatar with flames */}
         <div className="relative inline-block mb-6">
@@ -356,74 +369,53 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
         </div>
       </div>
 
-      {/* === PERCENTILE & RANKING SECTION === */}
+      {/* === COMBINED: PERCENTILE + BREAKDOWN === */}
       <div className="glass rounded-3xl p-6">
-        {/* Big percentile number */}
+        {/* Percentile line */}
         {stats?.percentile !== null && stats?.percentile !== undefined && (
           <div className="text-center mb-4">
-            <div className="text-white/50 text-sm mb-1">You&apos;re doing better than</div>
-            <div className={`text-5xl font-black ${stats.percentile >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+            <span className="text-white/50 text-sm">Better than </span>
+            <span className={`text-2xl font-black ${stats.percentile >= 50 ? 'text-green-400' : 'text-red-400'}`}>
               {stats.percentile}%
-            </div>
-            <div className="text-white/50 text-sm">of {totalUsers.toLocaleString()} people</div>
+            </span>
+            <span className="text-white/50 text-sm"> of {totalUsers.toLocaleString()} people</span>
           </div>
         )}
-        
-        {/* Comparison cards */}
-        {totalUsers > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-            {/* City comparison */}
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-xs text-white/40 mb-1">📍 {hasEnoughCityData ? userCity : 'All Users'}</div>
-              <div className="text-lg font-bold text-cyan-400">{cityAvg ?? '—'}% avg</div>
-              {cityAvg !== null && (
-                <div className={`text-xs ${result.score < cityAvg ? 'text-green-400' : 'text-red-400'}`}>
-                  {result.score < cityAvg ? `${cityAvg - result.score}pts better` : result.score > cityAvg ? `${result.score - cityAvg}pts worse` : 'at avg'}
-                </div>
-              )}
-              {!hasEnoughCityData && (
-                <div className="text-xs text-white/30">need 5+ in {userCity}</div>
-              )}
-            </div>
-            
-            {/* Industry comparison */}
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-xs text-white/40 mb-1">💼 {stats?.industry?.name?.split(' / ')[0] || 'Industry'}</div>
-              <div className="text-lg font-bold text-purple-400">{industryAvg ?? '—'}% avg</div>
-              {industryAvg !== null && (
-                <div className={`text-xs ${result.score < industryAvg ? 'text-green-400' : 'text-red-400'}`}>
-                  {result.score < industryAvg ? `${industryAvg - result.score}pts better` : result.score > industryAvg ? `${result.score - industryAvg}pts worse` : 'at avg'}
-                </div>
-              )}
-              {industryAvg === null && (
-                <div className="text-xs text-white/30">need 5+ in industry</div>
-              )}
-            </div>
-            
-            {/* Age group comparison */}
-            <div className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-xs text-white/40 mb-1">🎂 Ages {stats?.ageGroup?.range || `${userAge-3}-${userAge+3}`}</div>
-              <div className="text-lg font-bold text-orange-400">{stats?.ageGroup?.avgScore ?? '—'}% avg</div>
-              {stats?.ageGroup?.avgScore !== undefined && (
-                <div className={`text-xs ${result.score < stats.ageGroup.avgScore ? 'text-green-400' : 'text-red-400'}`}>
-                  {result.score < stats.ageGroup.avgScore ? `${stats.ageGroup.avgScore - result.score}pts better` : result.score > stats.ageGroup.avgScore ? `${result.score - stats.ageGroup.avgScore}pts worse` : 'at avg'}
-                </div>
-              )}
-              {!stats?.ageGroup && (
-                <div className="text-xs text-white/30">need 5+ in age range</div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* === WHY YOU'RE COOKED - Breakdown Cards === */}
-      <div className="glass rounded-3xl p-6">
-        <h3 className="text-xl font-bold text-white mb-4 text-center">
-          Why You&apos;re {result.score}% Cooked
-        </h3>
+        {/* Compact comparison pills */}
+        {totalUsers > 0 && (cityAvg !== null || industryAvg !== null || stats?.ageGroup) && (
+          <div className="flex flex-wrap justify-center gap-2 mb-5">
+            {cityAvg !== null && (
+              <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
+                📍 {cityCompareLabel}: <span className="text-cyan-400 font-semibold">{cityAvg}%</span>
+                {result.score !== cityAvg && (
+                  <span className={result.score < cityAvg ? ' text-green-400' : ' text-red-400'}>
+                    {' '}{result.score < cityAvg ? `↑${cityAvg - result.score}pts` : `↓${result.score - cityAvg}pts`}
+                  </span>
+                )}
+              </span>
+            )}
+            {industryAvg !== null && (
+              <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
+                💼 Industry: <span className="text-purple-400 font-semibold">{industryAvg}%</span>
+                {result.score !== industryAvg && (
+                  <span className={result.score < industryAvg ? ' text-green-400' : ' text-red-400'}>
+                    {' '}{result.score < industryAvg ? `↑${industryAvg - result.score}pts` : `↓${result.score - industryAvg}pts`}
+                  </span>
+                )}
+              </span>
+            )}
+            {stats?.ageGroup?.avgScore !== undefined && (
+              <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
+                🎂 Age avg: <span className="text-orange-400 font-semibold">{stats.ageGroup.avgScore}%</span>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Breakdown grid */}
+        <div className="text-xs font-semibold text-white/30 uppercase tracking-widest text-center mb-3">Your Breakdown</div>
         <div className="grid grid-cols-2 gap-3">
-          {/* Net Worth */}
           <div className="bg-white/5 rounded-2xl p-4 text-center">
             <div className="text-2xl mb-1">💰</div>
             <div className="text-white/50 text-xs uppercase tracking-wide">Net Worth</div>
@@ -432,94 +424,63 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               {result.metrics.netWorth < 0 && <span className="text-sm"> debt</span>}
             </div>
             {avgNetWorth !== null && (
-              <div className="text-white/40 text-xs mt-1">
-                {cityCompareLabel} avg: ${avgNetWorth.toLocaleString()}
-              </div>
+              <div className="text-white/40 text-xs mt-1">{cityCompareLabel} avg: ${avgNetWorth.toLocaleString()}</div>
             )}
           </div>
-          
-          {/* Debt Ratio */}
           <div className="bg-white/5 rounded-2xl p-4 text-center">
             <div className="text-2xl mb-1">💳</div>
             <div className="text-white/50 text-xs uppercase tracking-wide">Debt-to-Income</div>
             <div className={`text-2xl font-bold ${result.metrics.dti <= 35 ? 'text-green-400' : result.metrics.dti <= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
               {result.metrics.dti}%
             </div>
-            <div className="text-white/40 text-xs mt-1">
-              Healthy: under 35%
-            </div>
+            <div className="text-white/40 text-xs mt-1">Healthy: under 35%</div>
           </div>
-          
-          {/* Rent Burden */}
           <div className="bg-white/5 rounded-2xl p-4 text-center">
             <div className="text-2xl mb-1">🏠</div>
             <div className="text-white/50 text-xs uppercase tracking-wide">Rent Burden</div>
             <div className={`text-2xl font-bold ${result.metrics.rentBurden <= 30 ? 'text-green-400' : result.metrics.rentBurden <= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
               {result.metrics.rentBurden}%
             </div>
-            <div className="text-white/40 text-xs mt-1">
-              Ideal: under 30%
-            </div>
+            <div className="text-white/40 text-xs mt-1">Ideal: under 30%</div>
           </div>
-          
-          {/* Savings Rate */}
           <div className="bg-white/5 rounded-2xl p-4 text-center">
             <div className="text-2xl mb-1">📈</div>
-            <div className="text-white/50 text-xs uppercase tracking-wide">Savings Rate</div>
+            <div className="text-white/50 text-xs uppercase tracking-wide">Est. Savings Rate</div>
             <div className={`text-2xl font-bold ${result.metrics.savingsRate >= 20 ? 'text-green-400' : result.metrics.savingsRate >= 10 ? 'text-yellow-400' : 'text-red-400'}`}>
               {result.metrics.savingsRate}%
             </div>
             <div className="text-white/40 text-xs mt-1">
-              Target: 20%+
+              {result.metrics.savingsRate === 0 ? 'Over budget' : 'Target: 20%+'}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* === TOP ISSUE === */}
-      {result.topIssues[0] && (
-        <div className="glass rounded-2xl p-5 border-l-4 border-l-yellow-500">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">🔥</div>
-            <div>
-              <div className="text-lg font-semibold text-white">
-                What&apos;s cooking you most: <span className="text-yellow-400">{result.topIssues[0].category}</span>
-              </div>
-              <div className="text-sm text-white/50">{result.topIssues[0].description}</div>
-            </div>
+        {/* Top issue inline */}
+        {result.topIssues[0] && (
+          <div className="mt-4 pt-4 border-t border-white/5 flex items-start gap-2">
+            <span className="text-base flex-shrink-0">🔥</span>
+            <p className="text-sm text-white/60">
+              <span className="text-yellow-400 font-semibold">{result.topIssues[0].category}</span>
+              {' '}— {result.topIssues[0].description}
+            </p>
           </div>
-        </div>
-      )}
-
-      {/* === ROAST === */}
-      <div className="glass rounded-3xl p-6 text-center">
-        <div className="text-4xl mb-3">{tier.emoji}</div>
-        <p className="text-xl text-white/70 italic">&ldquo;{result.roast}&rdquo;</p>
+        )}
       </div>
 
-      {/* === EMAIL CAPTURE === */}
-      <div className="glass rounded-2xl p-5 border-l-4 border-orange-500/50">
+      {/* === EMAIL CAPTURE === (hidden if already captured at the gate) */}
+      {!emailCaptured && <div className="glass rounded-2xl p-5 border border-orange-500/30">
         {emailStatus === 'success' ? (
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3">
             <div className="text-2xl">✅</div>
             <div>
               <div className="font-semibold text-white">You&apos;re on the list!</div>
-              <div className="text-sm text-white/50">
-                We&apos;ll email you when personalized tips are ready for your situation.
-              </div>
+              <div className="text-sm text-white/50">We&apos;ll notify you when personalized tips are ready.</div>
             </div>
           </div>
         ) : (
-          <div>
-            <div className="flex items-start gap-3 mb-4">
-              <div className="text-2xl">💡</div>
-              <div>
-                <div className="font-semibold text-white">Want tips to get uncooked?</div>
-                <div className="text-sm text-white/50">
-                  We&apos;re building personalized recommendations. Drop your email to get notified.
-                </div>
-              </div>
-            </div>
+          <>
+            <div className="font-semibold text-white mb-1">💡 Get tips to get uncooked</div>
+            <div className="text-sm text-white/50 mb-3">We&apos;re building personalized recommendations. Drop your email.</div>
             <form onSubmit={handleEmailSubmit} className="flex gap-2">
               <input
                 type="email"
@@ -540,42 +501,57 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
             {emailStatus === 'error' && (
               <p className="text-red-400 text-sm mt-2">Something went wrong. Try again?</p>
             )}
-          </div>
+          </>
         )}
-      </div>
+      </div>}
 
-      {/* === SHARE BUTTON (Sticky on mobile) === */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#050505] via-[#050505] to-transparent sm:relative sm:p-0 sm:bg-none z-50">
-        <div className="flex gap-3">
-          <button
-            onClick={handleShare}
-            disabled={isGenerating}
-            className="flex-1 h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all disabled:opacity-50 shadow-lg shadow-orange-500/25"
-          >
-            {isGenerating ? 'Generating...' : 'Share 🔥'}
-          </button>
-          <a
-            href="/leaderboard"
-            className="h-14 px-6 bg-white/10 hover:bg-white/20 text-white font-bold text-lg rounded-2xl border border-white/10 transition-all flex items-center justify-center"
-          >
-            🏆
-          </a>
-        </div>
-      </div>
-      
-      {/* Spacer for sticky button on mobile */}
-      <div className="h-20 sm:hidden"></div>
+      {/* === LEADERBOARD BUTTON === */}
+      <a
+        href="/leaderboard"
+        className="block w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl flex items-center justify-center transition-all"
+      >
+        🏆 View Leaderboard
+      </a>
+
+      {/* Spacer for sticky rank footer */}
+      <div className="h-20"></div>
 
       {/* Hidden ShareCard */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
-        <ShareCard 
-          ref={shareCardRef} 
-          result={result} 
-          avatarUrl={avatarUrl} 
+        <ShareCard
+          ref={shareCardRef}
+          result={result}
+          avatarUrl={avatarUrl}
           userCity={userCity}
           userAge={userAge}
         />
       </div>
+
+      {/* Sticky Rank Footer */}
+      {approxRank !== null && totalUsers > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-4">
+          <div className="container mx-auto px-4 pb-4 max-w-2xl">
+            <a
+              href="/leaderboard"
+              className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/10 transition-colors border border-white/10"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">📍</span>
+                <div>
+                  <div className="text-xs text-white/40">Your Rank</div>
+                  <div className="font-bold text-white">
+                    #{approxRank} <span className="text-white/40 text-sm font-normal">of {totalUsers}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-white/40">See full leaderboard</span>
+                <span className="text-white/40">→</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

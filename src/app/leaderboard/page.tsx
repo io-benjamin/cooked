@@ -34,14 +34,68 @@ const TIER_INFO: Record<string, { emoji: string; color: string }> = {
 type FilterType = 'all' | 'city' | 'industry' | 'age';
 const PAGE_SIZE = 25;
 
+function LeaderboardAvatar({ avatarUrl, tierInfo }: { avatarUrl: string | null; tierInfo: { emoji: string; color: string } }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (avatarUrl && !imgError) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={avatarUrl}
+        alt=""
+        className={`w-14 h-14 rounded-xl object-cover border-2 ${tierInfo.color.replace('text-', 'border-')}`}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
+      {tierInfo.emoji}
+    </div>
+  );
+}
+
+function formatNetWorth(value: number): string {
+  const abs = Math.abs(value);
+  const prefix = value < 0 ? '-' : '';
+  if (abs >= 1_000_000) {
+    // Round to nearest $10k, display in millions with up to 2 decimal places
+    const m = Math.round(abs / 10_000) / 100;
+    const str = m % 1 === 0
+      ? m.toFixed(0)
+      : m.toFixed(2).replace(/0+$/, '');
+    return `${prefix}$${str}M`;
+  }
+  if (abs >= 1_000) {
+    return `${prefix}$${Math.round(abs / 1_000)}k`;
+  }
+  return `${prefix}$${abs.toLocaleString()}`;
+}
+
+interface StatsData {
+  overall: {
+    avgScore: number;
+    count: number;
+  } | null;
+  totalUsers: number;
+  totalSubmissions: number;
+  topCities: Array<{ name: string; avgScore: number; count: number }>;
+  topIndustries: Array<{ name: string; avgScore: number; count: number }>;
+  bestCities: Array<{ name: string; avgScore: number; count: number }>;
+  distribution: Record<string, number>;
+}
+
 export default function LeaderboardPage() {
   const [allData, setAllData] = useState<Submission[]>([]);
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
   const [selectedAgeRange, setSelectedAgeRange] = useState<string>('');
   const [page, setPage] = useState(1);
+  const [displayLimit, setDisplayLimit] = useState<number | null>(null); // null = All
   const [userSubmission, setUserSubmission] = useState<{ id: string; rank: number; score: number } | null>(null);
 
   // Check for user's submission on mount
@@ -51,7 +105,7 @@ export default function LeaderboardPage() {
       const savedScore = localStorage.getItem('cooked_submission_score');
       setUserSubmission({ 
         id: savedId, 
-        rank: 0, // Will be calculated after data loads
+        rank: 0, 
         score: savedScore ? parseInt(savedScore) : 0 
       });
     }
@@ -62,10 +116,24 @@ export default function LeaderboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/leaderboard');
-        const json = await res.json();
-        const sorted = Array.isArray(json) ? json : [];
+        const [leaderboardRes, statsRes] = await Promise.all([
+          fetch('/api/leaderboard'),
+          fetch('/api/stats'),
+        ]);
+        
+        if (!leaderboardRes.ok) {
+          throw new Error(`Leaderboard API failed: ${leaderboardRes.status}`);
+        }
+        if (!statsRes.ok) {
+          throw new Error(`Stats API failed: ${statsRes.status}`);
+        }
+        
+        const leaderboardJson = await leaderboardRes.json();
+        const statsJson = await statsRes.json();
+
+        const sorted = Array.isArray(leaderboardJson) ? leaderboardJson : [];
         setAllData(sorted);
+        setStatsData(statsJson);
         
         // Find user's rank
         const savedId = localStorage.getItem('cooked_submission_id');
@@ -76,8 +144,9 @@ export default function LeaderboardPage() {
           }
         }
       } catch (e) {
-        console.error('Failed to fetch leaderboard:', e);
+        console.error('Failed to fetch data:', e);
         setAllData([]);
+        setStatsData(null);
       } finally {
         setLoading(false);
       }
@@ -85,41 +154,88 @@ export default function LeaderboardPage() {
     fetchData();
   }, []);
 
-  // Filter data
+  // Filter data (always from ALL data so stats are never affected by display limit)
   const filteredData = allData.filter(entry => {
     if (filter === 'city' && selectedCity && entry.city !== selectedCity) return false;
     if (filter === 'industry' && selectedIndustry && entry.industry !== selectedIndustry) return false;
     if (filter === 'age' && selectedAgeRange) {
-      const [min, max] = selectedAgeRange.split('-').map(n => parseInt(n));
-      if (entry.age < min || entry.age > max) return false;
+      if (selectedAgeRange === 'Under 18') {
+        if (entry.age >= 18) return false;
+      } else {
+        const [min, max] = selectedAgeRange.split('-').map(n => parseInt(n));
+        if (entry.age < min || entry.age > max) return false;
+      }
     }
     return true;
   });
 
-  // Paginate
-  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
-  const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Use displayLimit as page size when set, otherwise use default PAGE_SIZE
+  const currentPageSize = displayLimit || PAGE_SIZE;
+  const tableData = filteredData; // Always use all filtered data
 
-  // Reset page when filter changes
+  // Always paginate with the current page size
+  const totalPages = Math.ceil(tableData.length / currentPageSize);
+  const paginatedData = tableData.slice((page - 1) * currentPageSize, page * currentPageSize);
+
+  // Fetch stats when filters change
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        let url = '/api/stats';
+        const params = new URLSearchParams();
+        
+        if (filter === 'age' && selectedAgeRange) {
+          if (selectedAgeRange === 'Under 18') {
+            params.set('ageMin', '0');
+            params.set('ageMax', '17');
+          } else {
+            const [min, max] = selectedAgeRange.split('-').map(n => parseInt(n));
+            params.set('ageMin', min.toString());
+            params.set('ageMax', max.toString());
+          }
+        }
+        
+        if (params.toString()) {
+          url += '?' + params.toString();
+        }
+        
+        const statsRes = await fetch(url);
+        const statsJson = await statsRes.json();
+        setStatsData(statsJson);
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+        setStatsData(null);
+      }
+    };
+    
+    fetchStats();
+  }, [filter, selectedAgeRange]);
+
+  // Reset page when filters or display limit changes
   useEffect(() => {
     setPage(1);
-  }, [filter, selectedCity, selectedIndustry, selectedAgeRange]);
+  }, [filter, selectedCity, selectedIndustry, selectedAgeRange, displayLimit]);
 
   const cities = Array.from(new Set(allData.map(d => d.city))).sort();
   const industries = Array.from(new Set(allData.map(d => d.industry))).sort();
-  const ageRanges = ['18-24', '25-30', '31-40', '41-100'];
+  const ageRanges = ['Under 18', '18-24', '25-30', '31-40', '41-100'];
 
-  // Calculate stats from filtered data
-  const stats = {
-    totalSubmissions: filteredData.length,
-    avgScore: filteredData.length > 0 ? Math.round(filteredData.reduce((sum, d) => sum + d.score, 0) / filteredData.length) : 0,
-    mostCookedCity: allData.length > 0 ? allData[0]?.city || '-' : '-',
-    mostCookedIndustry: allData.length > 0 ? allData[0]?.industry || '-' : '-',
+  // Use stats from API when available, fallback to basic stats
+  const stats = (statsData && statsData.totalUsers !== undefined) ? {
+    totalSubmissions: statsData.totalSubmissions || 0,
+    avgScore: statsData.overall?.avgScore || 0,
+    mostCookedCity: statsData.topCities?.[0]?.name || '-',
+    mostCookedIndustry: statsData.topIndustries?.[0]?.name || '-',
+  } : {
+    totalSubmissions: filteredData?.length || 0,
+    avgScore: filteredData && filteredData.length > 0 ? Math.round(filteredData.reduce((sum, d) => sum + d.score, 0) / filteredData.length) : 0,
+    mostCookedCity: '-',
+    mostCookedIndustry: '-',
   };
 
   const scrollToUser = () => {
     if (!userSubmission || userSubmission.rank === 0) return;
-    const userPage = Math.ceil(userSubmission.rank / PAGE_SIZE);
+    const userPage = Math.ceil(userSubmission.rank / currentPageSize);
     setPage(userPage);
   };
 
@@ -157,19 +273,19 @@ export default function LeaderboardPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-3xl font-black text-white">{stats.totalSubmissions.toLocaleString()}</div>
+            <div className="text-3xl font-black text-white">{(stats?.totalSubmissions || 0).toLocaleString()}</div>
             <div className="text-sm text-white/50">Total Submissions</div>
           </div>
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-3xl font-black text-orange-400">{stats.avgScore}%</div>
+            <div className="text-3xl font-black text-orange-400">{stats?.avgScore || 0}%</div>
             <div className="text-sm text-white/50">Average Score</div>
           </div>
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-lg font-bold text-white truncate">{stats.mostCookedCity || '—'}</div>
+            <div className="text-lg font-bold text-white truncate">{stats?.mostCookedCity || '—'}</div>
             <div className="text-sm text-white/50">Most Cooked City</div>
           </div>
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-lg font-bold text-white truncate">{stats.mostCookedIndustry || '—'}</div>
+            <div className="text-lg font-bold text-white truncate">{stats?.mostCookedIndustry || '—'}</div>
             <div className="text-sm text-white/50">Most Cooked Industry</div>
           </div>
         </div>
@@ -250,7 +366,30 @@ export default function LeaderboardPage() {
               </select>
             )}
           </div>
-        </div>
+        </div> {/* end glass card */}
+
+        {/* Row count + display limit */}
+        {!loading && filteredData.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <span className="text-sm text-white/40">
+              Showing {((page - 1) * currentPageSize + 1).toLocaleString()}-{Math.min(page * currentPageSize, tableData.length).toLocaleString()} of {tableData.length.toLocaleString()} entries
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/30">Display:</span>
+              {([100, 500, 1000, null] as (number | null)[]).map((limit) => (
+                <button
+                  key={limit ?? 'all'}
+                  onClick={() => setDisplayLimit(limit)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    displayLimit === limit ? 'bg-white/20 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'
+                  }`}
+                >
+                  {limit === null ? 'All' : limit.toLocaleString()}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Leaderboard */}
         {loading ? (
@@ -274,79 +413,68 @@ export default function LeaderboardPage() {
           <div className="space-y-3">
             {paginatedData.map((entry, index) => {
               const tierInfo = TIER_INFO[entry.tier] || TIER_INFO['simmering'];
-              const globalRank = (page - 1) * PAGE_SIZE + index + 1;
+              const globalRank = (page - 1) * currentPageSize + index + 1;
               const isTop3 = globalRank <= 3;
               const isCurrentUser = userSubmission?.id === entry.id;
               
               return (
-                <div 
+                  <div 
                   key={entry.id}
                   className={`glass rounded-2xl p-4 hover:bg-white/5 transition-colors ${
-                    isTop3 ? 'border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-transparent' : ''
-                  } ${isCurrentUser ? 'ring-2 ring-cyan-500' : ''}`}
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Rank */}
-                    <div className="flex-shrink-0 w-10 text-center">
-                      {isTop3 ? (
-                        <span className="text-3xl">{['🥇', '🥈', '🥉'][globalRank - 1]}</span>
-                      ) : (
-                        <span className="text-xl text-white/30 font-bold">{globalRank}</span>
-                      )}
-                    </div>
-                    
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      {entry.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img 
-                          src={entry.avatar_url} 
-                          alt="" 
-                          className={`w-14 h-14 rounded-xl object-cover border-2 ${tierInfo.color.replace('text-', 'border-')}`}
-                        />
-                      ) : (
-                        <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
-                          {tierInfo.emoji}
-                        </div>
-                      )}
-                    </div>
+                      isTop3 ? 'border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-transparent' : ''
+                    } ${isCurrentUser ? 'ring-2 ring-cyan-500' : ''}`}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Rank */}
+                      <div className="flex-shrink-0 w-10 text-center">
+                        {isTop3 ? (
+                          <span className="text-3xl">{['🥇', '🥈', '🥉'][globalRank - 1]}</span>
+                        ) : (
+                          <span className="text-xl text-white/30 font-bold">{globalRank}</span>
+                        )}
+                      </div>
+                      
+                      {/* Avatar */}
+                      <div className="flex-shrink-0">
+                        <LeaderboardAvatar avatarUrl={entry.avatar_url} tierInfo={tierInfo} />
+                      </div>
 
-                    {/* Main Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
-                        {isCurrentUser && <span className="px-2 py-0.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-full">You</span>}
-                        <span className="text-white/40">•</span>
-                        <span className="text-white/60 text-sm">{entry.age}yo</span>
-                        <span className="text-white/40">•</span>
-                        <span className="text-white/60 text-sm truncate">{entry.city}</span>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                        <div className={`px-3 py-2 rounded-lg ${entry.dti > 40 ? 'bg-red-500/20 text-red-400' : entry.dti > 25 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.dti}%</div>
-                          <div className="text-[10px] opacity-70">Debt-to-Income</div>
+                      {/* Main Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
+                          {isCurrentUser && <span className="px-2 py-0.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-full">You</span>}
+                          <span className="text-white/40">•</span>
+                          <span className="text-white/60 text-sm">{entry.age}yo</span>
+                          <span className="text-white/40">•</span>
+                          <span className="text-white/60 text-sm truncate">{entry.city}</span>
                         </div>
-                        <div className={`px-3 py-2 rounded-lg ${entry.rent_burden > 40 ? 'bg-red-500/20 text-red-400' : entry.rent_burden > 30 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.rent_burden}%</div>
-                          <div className="text-[10px] opacity-70">Rent Burden</div>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                          <div className={`px-3 py-2 rounded-lg ${entry.dti > 40 ? 'bg-red-500/20 text-red-400' : entry.dti > 25 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{entry.dti}%</div>
+                            <div className="text-[10px] opacity-70">Debt-to-Income</div>
+                          </div>
+                          <div className={`px-3 py-2 rounded-lg ${entry.rent_burden > 40 ? 'bg-red-500/20 text-red-400' : entry.rent_burden > 30 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{entry.rent_burden}%</div>
+                            <div className="text-[10px] opacity-70">Rent Burden</div>
+                          </div>
+                          <div className={`px-3 py-2 rounded-lg ${entry.savings_rate < 5 ? 'bg-red-500/20 text-red-400' : entry.savings_rate < 15 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{entry.savings_rate}%</div>
+                            <div className="text-[10px] opacity-70">Savings Rate</div>
+                          </div>
+                          <div className={`px-3 py-2 rounded-lg ${entry.net_worth < 0 ? 'bg-red-500/20 text-red-400' : entry.net_worth < 50000 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{formatNetWorth(entry.net_worth)}</div>
+                            <div className="text-[10px] opacity-70">Net Worth</div>
+                          </div>
                         </div>
-                        <div className={`px-3 py-2 rounded-lg ${entry.savings_rate < 5 ? 'bg-red-500/20 text-red-400' : entry.savings_rate < 15 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.savings_rate}%</div>
-                          <div className="text-[10px] opacity-70">Savings Rate</div>
+                        
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.industry}</span>
                         </div>
-                        <div className={`px-3 py-2 rounded-lg ${entry.net_worth < 0 ? 'bg-red-500/20 text-red-400' : entry.net_worth < 50000 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.net_worth < 0 ? '-' : ''}${Math.abs(entry.net_worth) >= 1000 ? `${Math.round(Math.abs(entry.net_worth) / 1000)}k` : Math.abs(entry.net_worth)}</div>
-                          <div className="text-[10px] opacity-70">Net Worth</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.industry}</span>
                       </div>
                     </div>
                   </div>
-                </div>
               );
             })}
           </div>

@@ -9,7 +9,7 @@ import { LiveCounter } from '@/components/LiveCounter';
 import { calculateCookedScore } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
-type Step = 'home' | 'avatar' | 'calculator' | 'results';
+type Step = 'home' | 'avatar' | 'calculator' | 'email' | 'results';
 
 export default function Home() {
   const [step, setStep] = useState<Step>('home');
@@ -18,6 +18,8 @@ export default function Home() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [previousSubmission, setPreviousSubmission] = useState<{ id: string; score: number } | null>(null);
+  const [emailInput, setEmailInput] = useState('');
+  const [emailCaptured, setEmailCaptured] = useState(false);
 
   // Check for existing submission on mount
   useEffect(() => {
@@ -33,14 +35,23 @@ export default function Home() {
     setStep('calculator');
   };
 
+  // Step 1: form submitted → brief loading → show email gate
   const handleSubmit = async (inputs: UserInputs) => {
     setIsLoading(true);
     setUserInputs(inputs);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const calculatedResult = calculateCookedScore(inputs);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsLoading(false);
+    setStep('email');
+  };
+
+  // Step 2: email captured (or skipped) → calculate + store results
+  const handleContinueFromEmail = async (email?: string) => {
+    if (!userInputs) return;
+    if (email) setEmailCaptured(true);
+
+    const calculatedResult = calculateCookedScore(userInputs);
     setResult(calculatedResult);
     setStep('results');
-    setIsLoading(false);
 
     // Submit to Supabase and save ID to localStorage
     try {
@@ -48,9 +59,9 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          age: inputs.age,
-          city: inputs.city,
-          industry: inputs.industry,
+          age: userInputs.age,
+          city: userInputs.city,
+          industry: userInputs.industry,
           score: calculatedResult.score,
           tier: calculatedResult.tier,
           dti: calculatedResult.metrics.dti,
@@ -59,6 +70,7 @@ export default function Home() {
           netWorth: calculatedResult.metrics.netWorth,
           avatarUrl: avatarUrl,
           isPublic: true,
+          email: email || null,
         }),
       });
       const data = await res.json();
@@ -75,6 +87,8 @@ export default function Home() {
     setResult(null);
     setUserInputs(null);
     setAvatarUrl(null);
+    setEmailInput('');
+    setEmailCaptured(false);
     setStep('home');
   };
 
@@ -226,14 +240,72 @@ export default function Home() {
           </div>
         )}
 
+        {step === 'email' && (
+          <div className="min-h-[70vh] flex items-center justify-center animate-slide-up">
+            <div className="w-full max-w-md">
+              <div className="glass rounded-3xl p-8 border border-orange-500/30">
+                <div className="text-center mb-6">
+                  <div className="text-5xl mb-3">🔥</div>
+                  <h2 className="text-2xl font-bold">Your results are ready.</h2>
+                  <p className="text-white/40 text-sm mt-1">One quick thing first...</p>
+                </div>
+
+                <div className="flex items-start gap-3 mb-6 p-4 bg-white/5 rounded-2xl">
+                  <div className="text-2xl flex-shrink-0">💡</div>
+                  <div>
+                    <div className="font-semibold text-white">Get tips to get uncooked</div>
+                    <div className="text-sm text-white/50 mt-1">
+                      We&apos;re building personalized recommendations based on your score. Drop your email to get notified when they&apos;re ready.
+                    </div>
+                  </div>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (emailInput && emailInput.includes('@')) {
+                      handleContinueFromEmail(emailInput);
+                    }
+                  }}
+                  className="space-y-3"
+                >
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="your@email.com"
+                    autoFocus
+                    className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-orange-500 focus:outline-none transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!emailInput || !emailInput.includes('@')}
+                    className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-40"
+                  >
+                    🔥 Show My Results
+                  </button>
+                </form>
+
+                <button
+                  onClick={() => handleContinueFromEmail()}
+                  className="w-full mt-3 text-center text-sm text-white/30 hover:text-white/50 transition-colors py-2"
+                >
+                  Skip, just show my results →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {step === 'results' && result && avatarUrl && (
           <div className="space-y-6 animate-slide-up">
-            <CookedMeter 
-              result={result} 
+            <CookedMeter
+              result={result}
               userCity={userInputs?.city || 'Unknown'}
               userAge={userInputs?.age || 25}
               userIndustry={userInputs?.industry?.split(' / ')[0] || 'Unknown'}
               avatarUrl={avatarUrl}
+              emailCaptured={emailCaptured}
             />
             
             {/* Reset button */}

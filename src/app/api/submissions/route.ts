@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       savings_rate: body.savingsRate,
       net_worth: body.netWorth,
       avatar_url: body.avatarUrl || null,
+      email: body.email || null,
       is_public: body.isPublic ?? true,
     })
     .select()
