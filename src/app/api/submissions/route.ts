@@ -5,13 +5,29 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const supabase = createClient();
   
-  // Get today's count
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's count in Eastern time
+  const now = new Date();
+  const easternDateStr = new Intl.DateTimeFormat('en-CA', { 
+    timeZone: 'America/New_York', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  }).format(now);
+  
+  // Create start and end of day in Eastern time
+  const [year, month, day] = easternDateStr.split('-').map(Number);
+  const startOfDayEastern = new Date(year, month - 1, day, 0, 0, 0, 0);
+  const endOfDayEastern = new Date(year, month - 1, day, 23, 59, 59, 999);
+  
+  // Convert to UTC ISO strings for database query
+  const startUTC = startOfDayEastern.toISOString();
+  const endUTC = endOfDayEastern.toISOString();
+  
   const { count: todayCount } = await supabase
     .from('submissions')
     .select('*', { count: 'exact', head: true })
-    .gte('created_at', `${today}T00:00:00`)
-    .lt('created_at', `${today}T23:59:59`);
+    .gte('created_at', startUTC)
+    .lt('created_at', endUTC);
 
   // Get total count
   const { count: totalCount } = await supabase
@@ -23,6 +39,8 @@ export async function GET() {
     total: totalCount || 0,
   });
 }
+
+
 
 // Submit a new result
 export async function POST(request: Request) {
