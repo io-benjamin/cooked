@@ -99,8 +99,12 @@ export default function LeaderboardPage() {
     if (filter === 'city' && selectedCity && entry.city !== selectedCity) return false;
     if (filter === 'industry' && selectedIndustry && entry.industry !== selectedIndustry) return false;
     if (filter === 'age' && selectedAgeRange) {
-      const [min, max] = selectedAgeRange.split('-').map(n => parseInt(n));
-      if (entry.age < min || entry.age > max) return false;
+      if (selectedAgeRange === 'Under 18') {
+        if (entry.age >= 18) return false;
+      } else {
+        const [min, max] = selectedAgeRange.split('-').map(n => parseInt(n));
+        if (entry.age < min || entry.age > max) return false;
+      }
     }
     return true;
   });
@@ -116,7 +120,7 @@ export default function LeaderboardPage() {
 
   const cities = Array.from(new Set(allData.map(d => d.city))).sort();
   const industries = Array.from(new Set(allData.map(d => d.industry))).sort();
-  const ageRanges = ['18-24', '25-30', '31-40', '41-100'];
+  const ageRanges = ['Under 18', '18-24', '25-30', '31-40', '41-100'];
 
   // Calculate stats from filtered data
   const stats = {
@@ -288,74 +292,74 @@ export default function LeaderboardPage() {
               const isCurrentUser = userSubmission?.id === entry.id;
               
               return (
-                <div 
+                  <div 
                   key={entry.id}
                   className={`glass rounded-2xl p-4 hover:bg-white/5 transition-colors ${
-                    isTop3 ? 'border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-transparent' : ''
-                  } ${isCurrentUser ? 'ring-2 ring-cyan-500' : ''}`}
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Rank */}
-                    <div className="flex-shrink-0 w-10 text-center">
-                      {isTop3 ? (
-                        <span className="text-3xl">{['🥇', '🥈', '🥉'][globalRank - 1]}</span>
-                      ) : (
-                        <span className="text-xl text-white/30 font-bold">{globalRank}</span>
-                      )}
-                    </div>
-                    
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      {entry.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img 
-                          src={entry.avatar_url} 
-                          alt="" 
-                          className={`w-14 h-14 rounded-xl object-cover border-2 ${tierInfo.color.replace('text-', 'border-')}`}
-                        />
-                      ) : (
-                        <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
-                          {tierInfo.emoji}
-                        </div>
-                      )}
-                    </div>
+                      isTop3 ? 'border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-transparent' : ''
+                    } ${isCurrentUser ? 'ring-2 ring-cyan-500' : ''}`}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Rank */}
+                      <div className="flex-shrink-0 w-10 text-center">
+                        {isTop3 ? (
+                          <span className="text-3xl">{['🥇', '🥈', '🥉'][globalRank - 1]}</span>
+                        ) : (
+                          <span className="text-xl text-white/30 font-bold">{globalRank}</span>
+                        )}
+                      </div>
+                      
+                      {/* Avatar */}
+                      <div className="flex-shrink-0">
+                        {entry.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img 
+                            src={entry.avatar_url} 
+                            alt="" 
+                            className={`w-14 h-14 rounded-xl object-cover border-2 ${tierInfo.color.replace('text-', 'border-')}`}
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
+                            {tierInfo.emoji}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Main Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
-                        {isCurrentUser && <span className="px-2 py-0.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-full">You</span>}
-                        <span className="text-white/40">•</span>
-                        <span className="text-white/60 text-sm">{entry.age}yo</span>
-                        <span className="text-white/40">•</span>
-                        <span className="text-white/60 text-sm truncate">{entry.city}</span>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                        <div className={`px-3 py-2 rounded-lg ${entry.dti > 40 ? 'bg-red-500/20 text-red-400' : entry.dti > 25 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.dti}%</div>
-                          <div className="text-[10px] opacity-70">Debt-to-Income</div>
+                      {/* Main Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className={`text-2xl font-black ${tierInfo.color}`}>{entry.score}%</span>
+                          {isCurrentUser && <span className="px-2 py-0.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-full">You</span>}
+                          <span className="text-white/40">•</span>
+                          <span className="text-white/60 text-sm">{entry.age}yo</span>
+                          <span className="text-white/40">•</span>
+                          <span className="text-white/60 text-sm truncate">{entry.city}</span>
                         </div>
-                        <div className={`px-3 py-2 rounded-lg ${entry.rent_burden > 40 ? 'bg-red-500/20 text-red-400' : entry.rent_burden > 30 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.rent_burden}%</div>
-                          <div className="text-[10px] opacity-70">Rent Burden</div>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                          <div className={`px-3 py-2 rounded-lg ${entry.dti > 40 ? 'bg-red-500/20 text-red-400' : entry.dti > 25 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{entry.dti}%</div>
+                            <div className="text-[10px] opacity-70">Debt-to-Income</div>
+                          </div>
+                          <div className={`px-3 py-2 rounded-lg ${entry.rent_burden > 40 ? 'bg-red-500/20 text-red-400' : entry.rent_burden > 30 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{entry.rent_burden}%</div>
+                            <div className="text-[10px] opacity-70">Rent Burden</div>
+                          </div>
+                          <div className={`px-3 py-2 rounded-lg ${entry.savings_rate < 5 ? 'bg-red-500/20 text-red-400' : entry.savings_rate < 15 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{entry.savings_rate}%</div>
+                            <div className="text-[10px] opacity-70">Savings Rate</div>
+                          </div>
+                          <div className={`px-3 py-2 rounded-lg ${entry.net_worth < 0 ? 'bg-red-500/20 text-red-400' : entry.net_worth < 50000 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                            <div className="text-lg font-bold">{entry.net_worth < 0 ? '-' : ''}${Math.abs(entry.net_worth) >= 1000 ? `${Math.round(Math.abs(entry.net_worth) / 1000)}k` : Math.abs(entry.net_worth)}</div>
+                            <div className="text-[10px] opacity-70">Net Worth</div>
+                          </div>
                         </div>
-                        <div className={`px-3 py-2 rounded-lg ${entry.savings_rate < 5 ? 'bg-red-500/20 text-red-400' : entry.savings_rate < 15 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.savings_rate}%</div>
-                          <div className="text-[10px] opacity-70">Savings Rate</div>
+                        
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.industry}</span>
                         </div>
-                        <div className={`px-3 py-2 rounded-lg ${entry.net_worth < 0 ? 'bg-red-500/20 text-red-400' : entry.net_worth < 50000 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                          <div className="text-lg font-bold">{entry.net_worth < 0 ? '-' : ''}${Math.abs(entry.net_worth) >= 1000 ? `${Math.round(Math.abs(entry.net_worth) / 1000)}k` : Math.abs(entry.net_worth)}</div>
-                          <div className="text-[10px] opacity-70">Net Worth</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="px-2 py-1 rounded-lg bg-white/5 text-white/50">{entry.industry}</span>
                       </div>
                     </div>
                   </div>
-                </div>
               );
             })}
           </div>
