@@ -43,6 +43,7 @@ export default function LeaderboardPage() {
   const [selectedAgeRange, setSelectedAgeRange] = useState<string>('');
   const [page, setPage] = useState(1);
   const [userSubmission, setUserSubmission] = useState<{ id: string; rank: number; score: number } | null>(null);
+  const [statsData, setStatsData] = useState<{topCities: {name: string}[]; topIndustries: {name: string}[]} | null>(null);
 
   // Check for user's submission on mount
   useEffect(() => {
@@ -62,10 +63,17 @@ export default function LeaderboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/leaderboard');
-        const json = await res.json();
-        const sorted = Array.isArray(json) ? json : [];
+        const [leaderboardRes, statsRes] = await Promise.all([
+          fetch('/api/leaderboard'),
+          fetch('/api/stats')
+        ]);
+        
+        const leaderboardJson = await leaderboardRes.json();
+        const statsJson = await statsRes.json();
+        
+        const sorted = Array.isArray(leaderboardJson) ? leaderboardJson : [];
         setAllData(sorted);
+        setStatsData(statsJson);
         
         // Find user's rank
         const savedId = localStorage.getItem('cooked_submission_id');
@@ -76,8 +84,9 @@ export default function LeaderboardPage() {
           }
         }
       } catch (e) {
-        console.error('Failed to fetch leaderboard:', e);
+        console.error('Failed to fetch data:', e);
         setAllData([]);
+        setStatsData(null);
       } finally {
         setLoading(false);
       }
@@ -113,8 +122,8 @@ export default function LeaderboardPage() {
   const stats = {
     totalSubmissions: filteredData.length,
     avgScore: filteredData.length > 0 ? Math.round(filteredData.reduce((sum, d) => sum + d.score, 0) / filteredData.length) : 0,
-    mostCookedCity: allData.length > 0 ? allData[0]?.city || '-' : '-',
-    mostCookedIndustry: allData.length > 0 ? allData[0]?.industry || '-' : '-',
+    mostCookedCity: statsData?.topCities?.[0]?.name || '-',
+    mostCookedIndustry: statsData?.topIndustries?.[0]?.name || '-',
   };
 
   const scrollToUser = () => {

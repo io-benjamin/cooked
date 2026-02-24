@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-const MIN_FOR_COMPARISON = 5;
+const MIN_FOR_COMPARISON = 10;
 
 interface Submission {
   score: number;
