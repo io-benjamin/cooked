@@ -19,14 +19,22 @@ export async function GET(request: Request) {
   const city = searchParams.get('city');
   const industry = searchParams.get('industry');
   const age = searchParams.get('age');
+  const ageMinParam = searchParams.get('ageMin');
+  const ageMaxParam = searchParams.get('ageMax');
   const userScore = searchParams.get('score');
   
   const supabase = createClient();
   
-  // Get all submissions
+  // Get total count of all submissions (including non-public)
+  const { count: totalSubmissionsCount } = await supabase
+    .from('submissions')
+    .select('*', { count: 'exact', head: true });
+  
+  // Get all public submissions for calculations (to match leaderboard display)
   const { data: allSubmissions } = await supabase
     .from('submissions')
-    .select('score, dti, rent_burden, savings_rate, net_worth, city, industry, age');
+    .select('score, dti, rent_burden, savings_rate, net_worth, city, industry, age')
+    .eq('is_public', true);
   
   if (!allSubmissions || allSubmissions.length === 0) {
     return NextResponse.json({
@@ -94,49 +102,114 @@ export async function GET(request: Request) {
     }
   }
 
-  // Calculate top cities by average score (most cooked)
-  const cityGroups = groupBy(allSubmissions, 'city');
-  const topCities = Object.entries(cityGroups)
-    .filter(([, subs]) => subs.length >= MIN_FOR_COMPARISON)
-    .map(([name, subs]) => ({
-      name,
-      avgScore: Math.round(subs.reduce((sum, s) => sum + s.score, 0) / subs.length),
-      count: subs.length,
-    }))
-    .sort((a, b) => b.avgScore - a.avgScore)
-    .slice(0, 5);
+  // Determine if any filter is active (for dynamic MIN threshold)
+  const hasActiveFilter = !!(city || industry || age || ageMinParam || ageMaxParam);
+  const minThreshold = hasActiveFilter ? 5 : MIN_FOR_COMPARISON;
 
-  // Calculate top industries by average score (most cooked)
-  const industryGroups = groupBy(allSubmissions, 'industry');
-  const topIndustries = Object.entries(industryGroups)
-    .filter(([, subs]) => subs.length >= MIN_FOR_COMPARISON)
-    .map(([name, subs]) => ({
-      name,
-      avgScore: Math.round(subs.reduce((sum, s) => sum + s.score, 0) / subs.length),
-      count: subs.length,
-    }))
-    .sort((a, b) => b.avgScore - a.avgScore)
-    .slice(0, 5);
+  // Build baseSubmissions from age/industry filters for topCities/topIndustries
+  let baseSubmissions = allSubmissions;
+  if (ageMinParam || ageMaxParam) {
+    const min = ageMinParam ? parseInt(ageMinParam) : 0;
+    const max = ageMaxParam ? parseInt(ageMaxParam) : 120;
+    baseSubmissions = allSubmissions.filter(s => s.age >= min && s.age <= max);
+  } else if (age) {
+    const ageNum = parseInt(age);
+    baseSubmissions = allSubmissions.filter(s => 
+      s.age >= ageNum - 3 && s.age <= ageNum + 3
+    );
+  }
 
-  // Calculate least cooked (best) cities
-  const bestCities = Object.entries(cityGroups)
-    .filter(([, subs]) => subs.length >= MIN_FOR_COMPARISON)
-    .map(([name, subs]) => ({
-      name,
-      avgScore: Math.round(subs.reduce((sum, s) => sum + s.score, 0) / subs.length),
-      count: subs.length,
-    }))
-    .sort((a, b) => a.avgScore - b.avgScore)
-    .slice(0, 5);
+  // Get unique cities and industries from filtered set (if filter active)
+  // But calculate their stats from ALL submissions
+  const allCityGroups = groupBy(allSubmissions, 'city');
+  const allIndustryGroups = groupBy(allSubmissions, 'industry');
 
-  // Calculate score distribution for histogram
+  let topCities, topIndustries, bestCities;
+
+  if (hasActiveFilter) {
+    // When filter is active, show cities/industries from the filtered set, ranked by overall averages
+    const filteredCities = new Set(baseSubmissions.map(s => s.city));
+    const filteredIndustries = new Set(baseSubmissions.map(s => s.industry));
+
+    topCities = Array.from(filteredCities)
+      .map(cityName => {
+        const citySubmissions = allCityGroups[cityName] || [];
+        return {
+          name: cityName,
+          avgScore: citySubmissions.length > 0 ? Math.round(citySubmissions.reduce((sum, s) => sum + s.score, 0) / citySubmissions.length) : 0,
+          count: citySubmissions.length,
+        };
+      })
+      .filter(({count}) => count >= minThreshold)
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 5);
+
+    topIndustries = Array.from(filteredIndustries)
+      .map(industryName => {
+        const industrySubmissions = allIndustryGroups[industryName] || [];
+        return {
+          name: industryName,
+          avgScore: industrySubmissions.length > 0 ? Math.round(industrySubmissions.reduce((sum, s) => sum + s.score, 0) / industrySubmissions.length) : 0,
+          count: industrySubmissions.length,
+        };
+      })
+      .filter(({count}) => count >= minThreshold)
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 5);
+
+    bestCities = Array.from(filteredCities)
+      .map(cityName => {
+        const citySubmissions = allCityGroups[cityName] || [];
+        return {
+          name: cityName,
+          avgScore: citySubmissions.length > 0 ? Math.round(citySubmissions.reduce((sum, s) => sum + s.score, 0) / citySubmissions.length) : 0,
+          count: citySubmissions.length,
+        };
+      })
+      .filter(({count}) => count >= minThreshold)
+      .sort((a, b) => a.avgScore - b.avgScore)
+      .slice(0, 5);
+  } else {
+    // When no filter, use original logic: top from all submissions
+    topCities = Object.entries(allCityGroups)
+      .filter(([, subs]) => subs.length >= minThreshold)
+      .map(([name, subs]) => ({
+        name,
+        avgScore: Math.round(subs.reduce((sum, s) => sum + s.score, 0) / subs.length),
+        count: subs.length,
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 5);
+
+    topIndustries = Object.entries(allIndustryGroups)
+      .filter(([, subs]) => subs.length >= minThreshold)
+      .map(([name, subs]) => ({
+        name,
+        avgScore: Math.round(subs.reduce((sum, s) => sum + s.score, 0) / subs.length),
+        count: subs.length,
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 5);
+
+    bestCities = Object.entries(allCityGroups)
+      .filter(([, subs]) => subs.length >= minThreshold)
+      .map(([name, subs]) => ({
+        name,
+        avgScore: Math.round(subs.reduce((sum, s) => sum + s.score, 0) / subs.length),
+        count: subs.length,
+      }))
+      .sort((a, b) => a.avgScore - b.avgScore)
+      .slice(0, 5);
+  }
+
+  // Calculate score distribution for histogram (from filtered set)
   const distribution = {
-    raw: allSubmissions.filter(s => s.score <= 20).length,
-    lightSizzle: allSubmissions.filter(s => s.score > 20 && s.score <= 40).length,
-    simmering: allSubmissions.filter(s => s.score > 40 && s.score <= 60).length,
-    sauteed: allSubmissions.filter(s => s.score > 60 && s.score <= 75).length,
-    wellDone: allSubmissions.filter(s => s.score > 75 && s.score <= 90).length,
-    charred: allSubmissions.filter(s => s.score > 90).length,
+    raw: baseSubmissions.filter(s => s.score <= 20).length,
+    lightSizzle: baseSubmissions.filter(s => s.score > 20 && s.score <= 40).length,
+    simmering: baseSubmissions.filter(s => s.score > 40 && s.score <= 60).length,
+    sauteed: baseSubmissions.filter(s => s.score > 60 && s.score <= 75).length,
+    wellDone: baseSubmissions.filter(s => s.score > 75 && s.score <= 90).length,
+    charred: baseSubmissions.filter(s => s.score > 90).length,
   };
 
   return NextResponse.json({
@@ -149,6 +222,7 @@ export async function GET(request: Request) {
     ageGroup: ageGroupStats,
     percentile,
     totalUsers: allSubmissions.length,
+    totalSubmissions: totalSubmissionsCount || 0,
     topCities,
     bestCities,
     topIndustries,

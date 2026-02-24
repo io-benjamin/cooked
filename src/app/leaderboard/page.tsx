@@ -73,8 +73,22 @@ function formatNetWorth(value: number): string {
   return `${prefix}$${abs.toLocaleString()}`;
 }
 
+interface StatsData {
+  overall: {
+    avgScore: number;
+    count: number;
+  } | null;
+  totalUsers: number;
+  totalSubmissions: number;
+  topCities: Array<{ name: string; avgScore: number; count: number }>;
+  topIndustries: Array<{ name: string; avgScore: number; count: number }>;
+  bestCities: Array<{ name: string; avgScore: number; count: number }>;
+  distribution: Record<string, number>;
+}
+
 export default function LeaderboardPage() {
   const [allData, setAllData] = useState<Submission[]>([]);
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedCity, setSelectedCity] = useState<string>('');
@@ -91,7 +105,7 @@ export default function LeaderboardPage() {
       const savedScore = localStorage.getItem('cooked_submission_score');
       setUserSubmission({ 
         id: savedId, 
-        rank: 0, // Will be calculated after data loads
+        rank: 0, 
         score: savedScore ? parseInt(savedScore) : 0 
       });
     }
@@ -102,14 +116,24 @@ export default function LeaderboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [leaderboardRes] = await Promise.all([
+        const [leaderboardRes, statsRes] = await Promise.all([
           fetch('/api/leaderboard'),
+          fetch('/api/stats'),
         ]);
         
+        if (!leaderboardRes.ok) {
+          throw new Error(`Leaderboard API failed: ${leaderboardRes.status}`);
+        }
+        if (!statsRes.ok) {
+          throw new Error(`Stats API failed: ${statsRes.status}`);
+        }
+        
         const leaderboardJson = await leaderboardRes.json();
+        const statsJson = await statsRes.json();
 
         const sorted = Array.isArray(leaderboardJson) ? leaderboardJson : [];
         setAllData(sorted);
+        setStatsData(statsJson);
         
         // Find user's rank
         const savedId = localStorage.getItem('cooked_submission_id');
@@ -122,6 +146,7 @@ export default function LeaderboardPage() {
       } catch (e) {
         console.error('Failed to fetch data:', e);
         setAllData([]);
+        setStatsData(null);
       } finally {
         setLoading(false);
       }
@@ -144,14 +169,49 @@ export default function LeaderboardPage() {
     return true;
   });
 
-  // Apply display limit only to the table rows (stats above are unaffected)
-  const tableData = displayLimit ? filteredData.slice(0, displayLimit) : filteredData;
+  // Use displayLimit as page size when set, otherwise use default PAGE_SIZE
+  const currentPageSize = displayLimit || PAGE_SIZE;
+  const tableData = filteredData; // Always use all filtered data
 
-  // Paginate
-  const totalPages = Math.ceil(tableData.length / PAGE_SIZE);
-  const paginatedData = tableData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Always paginate with the current page size
+  const totalPages = Math.ceil(tableData.length / currentPageSize);
+  const paginatedData = tableData.slice((page - 1) * currentPageSize, page * currentPageSize);
 
-  // Reset page when filter or display limit changes
+  // Fetch stats when filters change
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        let url = '/api/stats';
+        const params = new URLSearchParams();
+        
+        if (filter === 'age' && selectedAgeRange) {
+          if (selectedAgeRange === 'Under 18') {
+            params.set('ageMin', '0');
+            params.set('ageMax', '17');
+          } else {
+            const [min, max] = selectedAgeRange.split('-').map(n => parseInt(n));
+            params.set('ageMin', min.toString());
+            params.set('ageMax', max.toString());
+          }
+        }
+        
+        if (params.toString()) {
+          url += '?' + params.toString();
+        }
+        
+        const statsRes = await fetch(url);
+        const statsJson = await statsRes.json();
+        setStatsData(statsJson);
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+        setStatsData(null);
+      }
+    };
+    
+    fetchStats();
+  }, [filter, selectedAgeRange]);
+
+  // Reset page when filters or display limit changes
   useEffect(() => {
     setPage(1);
   }, [filter, selectedCity, selectedIndustry, selectedAgeRange, displayLimit]);
@@ -160,34 +220,22 @@ export default function LeaderboardPage() {
   const industries = Array.from(new Set(allData.map(d => d.industry))).sort();
   const ageRanges = ['Under 18', '18-24', '25-30', '31-40', '41-100'];
 
-  // Most cooked city/industry = highest average cooked score across all submissions in that group.
-  // Requires at least 2 submissions per group so one outlier can't dominate; falls back if nothing qualifies.
-  const topByAvgScore = (data: Submission[], key: 'city' | 'industry') => {
-    if (data.length === 0) return '-';
-    const groups: Record<string, number[]> = {};
-    data.forEach(d => {
-      const k = d[key];
-      if (!groups[k]) groups[k] = [];
-      groups[k].push(d.score);
-    });
-    const entries = Object.entries(groups);
-    const qualified = entries.filter(([, scores]) => scores.length >= 2);
-    const source = qualified.length > 0 ? qualified : entries;
-    return source
-      .map(([name, scores]) => ({ name, avg: scores.reduce((a, b) => a + b, 0) / scores.length }))
-      .sort((a, b) => b.avg - a.avg)[0]?.name || '-';
-  };
-
-  const stats = {
-    totalSubmissions: filteredData.length,
-    avgScore: filteredData.length > 0 ? Math.round(filteredData.reduce((sum, d) => sum + d.score, 0) / filteredData.length) : 0,
-    mostCookedCity: topByAvgScore(filteredData, 'city'),
-    mostCookedIndustry: topByAvgScore(filteredData, 'industry'),
+  // Use stats from API when available, fallback to basic stats
+  const stats = (statsData && statsData.totalUsers !== undefined) ? {
+    totalSubmissions: statsData.totalSubmissions || 0,
+    avgScore: statsData.overall?.avgScore || 0,
+    mostCookedCity: statsData.topCities?.[0]?.name || '-',
+    mostCookedIndustry: statsData.topIndustries?.[0]?.name || '-',
+  } : {
+    totalSubmissions: filteredData?.length || 0,
+    avgScore: filteredData && filteredData.length > 0 ? Math.round(filteredData.reduce((sum, d) => sum + d.score, 0) / filteredData.length) : 0,
+    mostCookedCity: '-',
+    mostCookedIndustry: '-',
   };
 
   const scrollToUser = () => {
     if (!userSubmission || userSubmission.rank === 0) return;
-    const userPage = Math.ceil(userSubmission.rank / PAGE_SIZE);
+    const userPage = Math.ceil(userSubmission.rank / currentPageSize);
     setPage(userPage);
   };
 
@@ -225,19 +273,19 @@ export default function LeaderboardPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-3xl font-black text-white">{stats.totalSubmissions.toLocaleString()}</div>
+            <div className="text-3xl font-black text-white">{(stats?.totalSubmissions || 0).toLocaleString()}</div>
             <div className="text-sm text-white/50">Total Submissions</div>
           </div>
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-3xl font-black text-orange-400">{stats.avgScore}%</div>
+            <div className="text-3xl font-black text-orange-400">{stats?.avgScore || 0}%</div>
             <div className="text-sm text-white/50">Average Score</div>
           </div>
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-lg font-bold text-white truncate">{stats.mostCookedCity || '—'}</div>
+            <div className="text-lg font-bold text-white truncate">{stats?.mostCookedCity || '—'}</div>
             <div className="text-sm text-white/50">Most Cooked City</div>
           </div>
           <div className="glass rounded-2xl p-4 text-center flex flex-col justify-center min-h-[100px]">
-            <div className="text-lg font-bold text-white truncate">{stats.mostCookedIndustry || '—'}</div>
+            <div className="text-lg font-bold text-white truncate">{stats?.mostCookedIndustry || '—'}</div>
             <div className="text-sm text-white/50">Most Cooked Industry</div>
           </div>
         </div>
@@ -324,7 +372,7 @@ export default function LeaderboardPage() {
         {!loading && filteredData.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <span className="text-sm text-white/40">
-              Showing {tableData.length.toLocaleString()} of {filteredData.length.toLocaleString()} entries
+              Showing {((page - 1) * currentPageSize + 1).toLocaleString()}-{Math.min(page * currentPageSize, tableData.length).toLocaleString()} of {tableData.length.toLocaleString()} entries
             </span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-white/30">Display:</span>
@@ -365,7 +413,7 @@ export default function LeaderboardPage() {
           <div className="space-y-3">
             {paginatedData.map((entry, index) => {
               const tierInfo = TIER_INFO[entry.tier] || TIER_INFO['simmering'];
-              const globalRank = (page - 1) * PAGE_SIZE + index + 1;
+              const globalRank = (page - 1) * currentPageSize + index + 1;
               const isTop3 = globalRank <= 3;
               const isCurrentUser = userSubmission?.id === entry.id;
               
