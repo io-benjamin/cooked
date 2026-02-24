@@ -46,11 +46,22 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
   // Calculate individual scores (0-100, higher = more cooked)
   const breakdown = calculateBreakdown(inputs, totalIncome, monthlyIncome, totalDebt, colMultiplier);
   
+  // Estimated take-home after ~28% taxes (federal + state + FICA rough average)
+  const estimatedTakeHome = (totalIncome * 0.72) / 12;
+  // Estimated non-rent monthly expenses (food, utilities, transport, etc.)
+  // 30% of monthly gross, with a $600 floor that's capped at 80% of take-home
+  // so very low incomes don't always show 0%
+  const estimatedNonRent = Math.max(monthlyIncome * 0.30, Math.min(600, estimatedTakeHome * 0.80));
+  const estimatedMonthlySavings = Math.max(0, estimatedTakeHome - inputs.monthlyRent - estimatedNonRent);
+  const estimatedSavingsRate = estimatedTakeHome > 0
+    ? Math.round((estimatedMonthlySavings / estimatedTakeHome) * 100)
+    : 0;
+
   // Calculate financial metrics for leaderboard
   const metrics: FinancialMetrics = {
     dti: Math.round((totalDebt / totalIncome) * 100),
     rentBurden: Math.round((inputs.monthlyRent / monthlyIncome) * 100),
-    savingsRate: Math.round((totalSavings / totalIncome) * 100),
+    savingsRate: estimatedSavingsRate,
     netWorth: totalSavings - totalDebt,
   };
   
@@ -123,8 +134,11 @@ function calculateBreakdown(
   else if (debtRatio > 0.25) debtScore = 30;
   else debtScore = 10;
   
-  // Savings score (0-100) - based on emergency fund
-  const monthsOfExpenses = inputs.totalSavings / (inputs.monthlyRent + 500); // rent + basic expenses
+  // Savings score (0-100) - based on emergency fund (liquid savings only, not retirement)
+  // Non-rent expenses: 30% of monthly gross (food, utilities, transport), minimum $600
+  // capped at 80% of take-home to avoid false zeros for very low incomes
+  const estimatedNonRent = Math.max(monthlyIncome * 0.30, Math.min(600, monthlyIncome * 0.72 * 0.80));
+  const monthsOfExpenses = inputs.totalSavings / Math.max(inputs.monthlyRent + estimatedNonRent, 200);
   let savingsScore = 0;
   if (monthsOfExpenses < 1) savingsScore = 100;
   else if (monthsOfExpenses < 3) savingsScore = 70;
@@ -196,7 +210,8 @@ function getTopIssues(
     });
   }
   
-  const monthsOfExpenses = inputs.totalSavings / (inputs.monthlyRent + 500);
+  const efNonRent = Math.max(monthlyIncome * 0.30, Math.min(600, monthlyIncome * 0.72 * 0.80));
+  const monthsOfExpenses = inputs.totalSavings / Math.max(inputs.monthlyRent + efNonRent, 200);
   if (monthsOfExpenses < 3) {
     issues.push({
       category: 'Emergency Fund',

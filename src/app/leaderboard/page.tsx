@@ -34,6 +34,45 @@ const TIER_INFO: Record<string, { emoji: string; color: string }> = {
 type FilterType = 'all' | 'city' | 'industry' | 'age';
 const PAGE_SIZE = 25;
 
+function LeaderboardAvatar({ avatarUrl, tierInfo }: { avatarUrl: string | null; tierInfo: { emoji: string; color: string } }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (avatarUrl && !imgError) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={avatarUrl}
+        alt=""
+        className={`w-14 h-14 rounded-xl object-cover border-2 ${tierInfo.color.replace('text-', 'border-')}`}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
+      {tierInfo.emoji}
+    </div>
+  );
+}
+
+function formatNetWorth(value: number): string {
+  const abs = Math.abs(value);
+  const prefix = value < 0 ? '-' : '';
+  if (abs >= 1_000_000) {
+    // Round to nearest $10k, display in millions with up to 2 decimal places
+    const m = Math.round(abs / 10_000) / 100;
+    const str = m % 1 === 0
+      ? m.toFixed(0)
+      : m.toFixed(2).replace(/0+$/, '');
+    return `${prefix}$${str}M`;
+  }
+  if (abs >= 1_000) {
+    return `${prefix}$${Math.round(abs / 1_000)}k`;
+  }
+  return `${prefix}$${abs.toLocaleString()}`;
+}
+
 export default function LeaderboardPage() {
   const [allData, setAllData] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,8 +81,8 @@ export default function LeaderboardPage() {
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
   const [selectedAgeRange, setSelectedAgeRange] = useState<string>('');
   const [page, setPage] = useState(1);
+  const [displayLimit, setDisplayLimit] = useState<number | null>(null); // null = All
   const [userSubmission, setUserSubmission] = useState<{ id: string; rank: number; score: number } | null>(null);
-  const [statsData, setStatsData] = useState<{topCities: {name: string}[]; topIndustries: {name: string}[]} | null>(null);
 
   // Check for user's submission on mount
   useEffect(() => {
@@ -63,17 +102,14 @@ export default function LeaderboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [leaderboardRes, statsRes] = await Promise.all([
+        const [leaderboardRes] = await Promise.all([
           fetch('/api/leaderboard'),
-          fetch('/api/stats')
         ]);
         
         const leaderboardJson = await leaderboardRes.json();
-        const statsJson = await statsRes.json();
-        
+
         const sorted = Array.isArray(leaderboardJson) ? leaderboardJson : [];
         setAllData(sorted);
-        setStatsData(statsJson);
         
         // Find user's rank
         const savedId = localStorage.getItem('cooked_submission_id');
@@ -86,7 +122,6 @@ export default function LeaderboardPage() {
       } catch (e) {
         console.error('Failed to fetch data:', e);
         setAllData([]);
-        setStatsData(null);
       } finally {
         setLoading(false);
       }
@@ -94,7 +129,7 @@ export default function LeaderboardPage() {
     fetchData();
   }, []);
 
-  // Filter data
+  // Filter data (always from ALL data so stats are never affected by display limit)
   const filteredData = allData.filter(entry => {
     if (filter === 'city' && selectedCity && entry.city !== selectedCity) return false;
     if (filter === 'industry' && selectedIndustry && entry.industry !== selectedIndustry) return false;
@@ -109,25 +144,45 @@ export default function LeaderboardPage() {
     return true;
   });
 
-  // Paginate
-  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
-  const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Apply display limit only to the table rows (stats above are unaffected)
+  const tableData = displayLimit ? filteredData.slice(0, displayLimit) : filteredData;
 
-  // Reset page when filter changes
+  // Paginate
+  const totalPages = Math.ceil(tableData.length / PAGE_SIZE);
+  const paginatedData = tableData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when filter or display limit changes
   useEffect(() => {
     setPage(1);
-  }, [filter, selectedCity, selectedIndustry, selectedAgeRange]);
+  }, [filter, selectedCity, selectedIndustry, selectedAgeRange, displayLimit]);
 
   const cities = Array.from(new Set(allData.map(d => d.city))).sort();
   const industries = Array.from(new Set(allData.map(d => d.industry))).sort();
   const ageRanges = ['Under 18', '18-24', '25-30', '31-40', '41-100'];
 
-  // Calculate stats from filtered data
+  // Most cooked city/industry = highest average cooked score across all submissions in that group.
+  // Requires at least 2 submissions per group so one outlier can't dominate; falls back if nothing qualifies.
+  const topByAvgScore = (data: Submission[], key: 'city' | 'industry') => {
+    if (data.length === 0) return '-';
+    const groups: Record<string, number[]> = {};
+    data.forEach(d => {
+      const k = d[key];
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(d.score);
+    });
+    const entries = Object.entries(groups);
+    const qualified = entries.filter(([, scores]) => scores.length >= 2);
+    const source = qualified.length > 0 ? qualified : entries;
+    return source
+      .map(([name, scores]) => ({ name, avg: scores.reduce((a, b) => a + b, 0) / scores.length }))
+      .sort((a, b) => b.avg - a.avg)[0]?.name || '-';
+  };
+
   const stats = {
     totalSubmissions: filteredData.length,
     avgScore: filteredData.length > 0 ? Math.round(filteredData.reduce((sum, d) => sum + d.score, 0) / filteredData.length) : 0,
-    mostCookedCity: statsData?.topCities?.[0]?.name || '-',
-    mostCookedIndustry: statsData?.topIndustries?.[0]?.name || '-',
+    mostCookedCity: topByAvgScore(filteredData, 'city'),
+    mostCookedIndustry: topByAvgScore(filteredData, 'industry'),
   };
 
   const scrollToUser = () => {
@@ -263,7 +318,30 @@ export default function LeaderboardPage() {
               </select>
             )}
           </div>
-        </div>
+        </div> {/* end glass card */}
+
+        {/* Row count + display limit */}
+        {!loading && filteredData.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <span className="text-sm text-white/40">
+              Showing {tableData.length.toLocaleString()} of {filteredData.length.toLocaleString()} entries
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/30">Display:</span>
+              {([100, 500, 1000, null] as (number | null)[]).map((limit) => (
+                <button
+                  key={limit ?? 'all'}
+                  onClick={() => setDisplayLimit(limit)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    displayLimit === limit ? 'bg-white/20 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'
+                  }`}
+                >
+                  {limit === null ? 'All' : limit.toLocaleString()}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Leaderboard */}
         {loading ? (
@@ -310,18 +388,7 @@ export default function LeaderboardPage() {
                       
                       {/* Avatar */}
                       <div className="flex-shrink-0">
-                        {entry.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img 
-                            src={entry.avatar_url} 
-                            alt="" 
-                            className={`w-14 h-14 rounded-xl object-cover border-2 ${tierInfo.color.replace('text-', 'border-')}`}
-                          />
-                        ) : (
-                          <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
-                            {tierInfo.emoji}
-                          </div>
-                        )}
+                        <LeaderboardAvatar avatarUrl={entry.avatar_url} tierInfo={tierInfo} />
                       </div>
 
                       {/* Main Content */}
@@ -349,7 +416,7 @@ export default function LeaderboardPage() {
                             <div className="text-[10px] opacity-70">Savings Rate</div>
                           </div>
                           <div className={`px-3 py-2 rounded-lg ${entry.net_worth < 0 ? 'bg-red-500/20 text-red-400' : entry.net_worth < 50000 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                            <div className="text-lg font-bold">{entry.net_worth < 0 ? '-' : ''}${Math.abs(entry.net_worth) >= 1000 ? `${Math.round(Math.abs(entry.net_worth) / 1000)}k` : Math.abs(entry.net_worth)}</div>
+                            <div className="text-lg font-bold">{formatNetWorth(entry.net_worth)}</div>
                             <div className="text-[10px] opacity-70">Net Worth</div>
                           </div>
                         </div>
