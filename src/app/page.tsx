@@ -9,7 +9,7 @@ import { LiveCounter } from '@/components/LiveCounter';
 import { calculateCookedScore } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
-type Step = 'home' | 'avatar' | 'calculator' | 'email' | 'results';
+type Step = 'home' | 'avatar' | 'calculator' | 'results';
 
 export default function Home() {
   const [step, setStep] = useState<Step>('home');
@@ -18,9 +18,6 @@ export default function Home() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [previousSubmission, setPreviousSubmission] = useState<{ id: string; score: number } | null>(null);
-  const [emailInput, setEmailInput] = useState('');
-  const [emailCaptured, setEmailCaptured] = useState(false);
-
   // Check for existing submission on mount
   useEffect(() => {
     const id = localStorage.getItem('cooked_submission_id');
@@ -35,25 +32,22 @@ export default function Home() {
     setStep('calculator');
   };
 
-  // Step 1: form submitted → brief loading → show email gate
+
   const handleSubmit = async (inputs: UserInputs) => {
     setIsLoading(true);
     setUserInputs(inputs);
     await new Promise(resolve => setTimeout(resolve, 1500));
+
+    const calculatedResult = calculateCookedScore(inputs);
+    setResult(calculatedResult);
     setIsLoading(false);
-    setStep('email');
+    setStep('results');
+    // Submission to Supabase happens in handleEmailCapture once we have the email
   };
 
-  // Step 2: email captured (or skipped) → calculate + store results
-  const handleContinueFromEmail = async (email?: string) => {
-    if (!userInputs) return;
-    if (email) setEmailCaptured(true);
-
-    const calculatedResult = calculateCookedScore(userInputs);
-    setResult(calculatedResult);
-    setStep('results');
-
-    // Submit to Supabase and save ID to localStorage
+  // Called by CookedMeter blur overlay when user enters email — submits to Supabase with email included
+  const handleEmailCapture = async (email: string) => {
+    if (!userInputs || !result) return;
     try {
       const res = await fetch('/api/submissions', {
         method: 'POST',
@@ -62,24 +56,29 @@ export default function Home() {
           age: userInputs.age,
           city: userInputs.city,
           industry: userInputs.industry,
-          score: calculatedResult.score,
-          tier: calculatedResult.tier,
-          dti: calculatedResult.metrics.dti,
-          rentBurden: calculatedResult.metrics.rentBurden,
-          savingsRate: calculatedResult.metrics.savingsRate,
-          netWorth: calculatedResult.metrics.netWorth,
+          score: result.score,
+          tier: result.tier,
+          dti: result.metrics.dti,
+          rentBurden: result.metrics.rentBurden,
+          savingsRate: result.metrics.savingsRate,
+          netWorth: result.metrics.netWorth,
           avatarUrl: avatarUrl,
           isPublic: true,
-          email: email || null,
+          email,
+          homeValue: userInputs.homeValue || null,
+          mortgageBalance: userInputs.mortgageBalance || null,
+          householdSize: userInputs.householdSize || null,
+          partnerIncome: userInputs.partnerIncome || null,
+          maritalStatus: userInputs.maritalStatus || null,
         }),
       });
       const data = await res.json();
       if (data?.id) {
         localStorage.setItem('cooked_submission_id', data.id);
-        localStorage.setItem('cooked_submission_score', String(calculatedResult.score));
+        localStorage.setItem('cooked_submission_score', String(result.score));
       }
     } catch {
-      // Silently fail - don't break UX if Supabase isn't configured
+      // Silently fail
     }
   };
 
@@ -87,8 +86,6 @@ export default function Home() {
     setResult(null);
     setUserInputs(null);
     setAvatarUrl(null);
-    setEmailInput('');
-    setEmailCaptured(false);
     setStep('home');
   };
 
@@ -99,8 +96,8 @@ export default function Home() {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-orange-500/10 via-red-500/5 to-transparent blur-3xl pointer-events-none" />
       <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-orange-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
       <div className="fixed bottom-0 right-0 w-[400px] h-[400px] bg-gradient-to-tl from-red-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
-      
-      {/* Floating emojis - static on mobile (CSS disables animation), animated on desktop */}
+
+      {/* Floating emojis */}
       <div className="fixed top-20 left-[10%] text-4xl animate-float opacity-20" style={{ animationDelay: '0s' }}>🔥</div>
       <div className="fixed top-40 right-[15%] text-3xl animate-float opacity-20" style={{ animationDelay: '1s' }}>💀</div>
       <div className="fixed bottom-40 left-[20%] text-3xl animate-float opacity-20" style={{ animationDelay: '2s' }}>🥩</div>
@@ -131,12 +128,11 @@ export default function Home() {
       {/* Main Content */}
       <div className="relative z-10 container mx-auto px-4 py-8">
         {step === 'home' && (
-          /* Hero Section */
           <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
             <div className="space-y-8 max-w-3xl mx-auto">
               {/* Returning visitor banner */}
               {previousSubmission && (
-                <Link 
+                <Link
                   href={`/results/${previousSubmission.id}`}
                   className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-2xl hover:border-orange-500/50 transition-all group"
                 >
@@ -150,22 +146,18 @@ export default function Home() {
                 </Link>
               )}
 
-              {/* Main headline */}
               <div className="space-y-4">
                 <LiveCounter />
-                
                 <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight">
                   are you financially
                   <br />
                   <span className="gradient-text">cooked?</span>
                 </h1>
-                
                 <p className="text-xl sm:text-2xl text-white/50 max-w-xl mx-auto leading-relaxed">
                   Create your character. Enter your stats. Watch yourself get roasted.
                 </p>
               </div>
 
-              {/* CTA Button */}
               <div className="pt-4">
                 <button
                   onClick={() => setStep('avatar')}
@@ -180,7 +172,6 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Trust badges */}
               <div className="flex flex-wrap justify-center gap-6 pt-8 text-sm text-white/40">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🎨</span>
@@ -196,7 +187,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Tier preview - Kitchen theme */}
               <div className="pt-12">
                 <p className="text-sm text-white/30 mb-4">The heat scale</p>
                 <div className="flex justify-center gap-2 sm:gap-4">
@@ -208,7 +198,7 @@ export default function Home() {
                     { emoji: '☠️', label: 'Well Done', color: 'from-red-500/20 to-red-500/5' },
                     { emoji: '💀', label: 'Charred', color: 'from-gray-500/20 to-gray-500/5' },
                   ].map((tier, i) => (
-                    <div 
+                    <div
                       key={i}
                       className={`flex flex-col items-center gap-1 p-3 rounded-xl bg-gradient-to-b ${tier.color} border border-white/5 hover:border-white/10 transition-all hover:scale-110 cursor-default`}
                     >
@@ -223,77 +213,18 @@ export default function Home() {
         )}
 
         {step === 'avatar' && (
-          /* Avatar Picker */
           <div className="py-8 animate-slide-up">
             <AvatarPicker onComplete={handleAvatarComplete} />
           </div>
         )}
 
         {step === 'calculator' && (
-          /* Calculator */
           <div className="py-8 animate-slide-up">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Now for the hard part</h2>
               <p className="text-white/50">Answer honestly. We won&apos;t judge... much. 🔥</p>
             </div>
             <CalculatorForm onSubmit={handleSubmit} isLoading={isLoading} />
-          </div>
-        )}
-
-        {step === 'email' && (
-          <div className="min-h-[70vh] flex items-center justify-center animate-slide-up">
-            <div className="w-full max-w-md">
-              <div className="glass rounded-3xl p-8 border border-orange-500/30">
-                <div className="text-center mb-6">
-                  <div className="text-5xl mb-3">🔥</div>
-                  <h2 className="text-2xl font-bold">Your results are ready.</h2>
-                  <p className="text-white/40 text-sm mt-1">One quick thing first...</p>
-                </div>
-
-                <div className="flex items-start gap-3 mb-6 p-4 bg-white/5 rounded-2xl">
-                  <div className="text-2xl flex-shrink-0">💡</div>
-                  <div>
-                    <div className="font-semibold text-white">Get tips to get uncooked</div>
-                    <div className="text-sm text-white/50 mt-1">
-                      We&apos;re building personalized recommendations based on your score. Drop your email to get notified when they&apos;re ready.
-                    </div>
-                  </div>
-                </div>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (emailInput && emailInput.includes('@')) {
-                      handleContinueFromEmail(emailInput);
-                    }
-                  }}
-                  className="space-y-3"
-                >
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="your@email.com"
-                    autoFocus
-                    className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-orange-500 focus:outline-none transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!emailInput || !emailInput.includes('@')}
-                    className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-40"
-                  >
-                    🔥 Show My Results
-                  </button>
-                </form>
-
-                <button
-                  onClick={() => handleContinueFromEmail()}
-                  className="w-full mt-3 text-center text-sm text-white/30 hover:text-white/50 transition-colors py-2"
-                >
-                  Skip, just show my results →
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
@@ -305,10 +236,10 @@ export default function Home() {
               userAge={userInputs?.age || 25}
               userIndustry={userInputs?.industry?.split(' / ')[0] || 'Unknown'}
               avatarUrl={avatarUrl}
-              emailCaptured={emailCaptured}
+              emailCaptured={false}
+              onEmailCapture={handleEmailCapture}
             />
-            
-            {/* Reset button */}
+
             <div className="max-w-2xl mx-auto">
               <button
                 onClick={handleReset}

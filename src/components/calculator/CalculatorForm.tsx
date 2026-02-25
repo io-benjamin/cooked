@@ -211,6 +211,65 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-white/70">Marital status</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['single', 'married'] as const).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => updateInput('maritalStatus', status)}
+                      className={`h-14 rounded-xl text-lg font-medium transition-all ${
+                        inputs.maritalStatus === status
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                          : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
+                      }`}
+                    >
+                      {status === 'single' ? '🙋 Single' : '💑 Married'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {inputs.maritalStatus === 'married' && (
+                <div className="space-y-2 animate-slide-up">
+                  <Label className="text-white/70">Partner / spouse income (before taxes)</Label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-lg">$</span>
+                    <Input
+                      type="number"
+                      className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
+                      placeholder="65,000"
+                      value={getNumberValue('partnerIncome')}
+                      onChange={(e) => handleNumberChange('partnerIncome', e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-white/70">Household size (including yourself)</Label>
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => updateInput('householdSize', Math.max(1, (inputs.householdSize || 1) - 1))}
+                    className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 text-2xl font-bold transition-all"
+                  >
+                    −
+                  </button>
+                  <div className="flex-1 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl font-bold">
+                    {inputs.householdSize || 1} {(inputs.householdSize || 1) === 1 ? 'person' : 'people'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateInput('householdSize', Math.min(10, (inputs.householdSize || 1) + 1))}
+                    className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 text-2xl font-bold transition-all"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -252,6 +311,36 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="pt-2 border-t border-white/10 space-y-3">
+                <p className="text-white/40 text-sm">Do you own your home? (optional)</p>
+                <div className="space-y-2">
+                  <Label className="text-white/70">Home value</Label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-lg">$</span>
+                    <Input
+                      type="number"
+                      className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
+                      placeholder="400,000"
+                      value={getNumberValue('homeValue')}
+                      onChange={(e) => handleNumberChange('homeValue', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white/70">Mortgage balance owed</Label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-lg">$</span>
+                    <Input
+                      type="number"
+                      className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
+                      placeholder="250,000"
+                      value={getNumberValue('mortgageBalance')}
+                      onChange={(e) => handleNumberChange('mortgageBalance', e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

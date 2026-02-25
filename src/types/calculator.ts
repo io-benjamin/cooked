@@ -9,10 +9,15 @@ export interface UserInputs {
   // Section 2: Income
   annualIncome: number;
   sideIncome?: number;
-  
+  maritalStatus?: 'single' | 'married';  // Triggers partner income prompt
+  partnerIncome?: number;                // Shown when married
+  householdSize?: number;                // Number of people in household
+
   // Section 3: Housing
   monthlyRent: number;
   livingArrangement: 'alone' | 'roommates' | 'partner' | 'family' | 'kids';
+  homeValue?: number;        // Market value of home (if owned)
+  mortgageBalance?: number;  // Remaining mortgage owed
   
   // Section 4: Debt
   studentLoans: number;

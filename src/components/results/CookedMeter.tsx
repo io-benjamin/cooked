@@ -11,6 +11,7 @@ interface CookedMeterProps {
   userIndustry: string;
   avatarUrl: string;
   emailCaptured?: boolean;
+  onEmailCapture?: (email: string) => Promise<void> | void;
 }
 
 const TIERS = [
@@ -38,77 +39,57 @@ interface StatsData {
   topIndustries?: { name: string; avgScore: number; count: number }[];
 }
 
-export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl, emailCaptured = false }: CookedMeterProps) {
+export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl, emailCaptured = false, onEmailCapture }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState<StatsData | null>(null);
-  const [email, setEmail] = useState('');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  // Blur soft-gate: starts locked unless email was already captured at a prior step
+  const [captured, setCaptured] = useState(emailCaptured);
+  const [unlockEmail, setUnlockEmail] = useState('');
+  const [unlockStatus, setUnlockStatus] = useState<'idle' | 'submitting'>('idle');
   const shareCardRef = useRef<HTMLDivElement>(null);
   const tier = getTier(result.score);
   const flameIntensity = result.score / 100;
 
-  // Get submission ID from localStorage (set after submission)
-  useEffect(() => {
-    const checkForId = () => {
-      const id = localStorage.getItem('cooked_submission_id');
-      if (id) setSubmissionId(id);
-    };
-    // Check immediately and after a delay (in case submission is still processing)
-    checkForId();
-    const timer = setTimeout(checkForId, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes('@') || !submissionId) return;
-    
-    setEmailStatus('submitting');
+  const fetchStats = async () => {
     try {
-      const res = await fetch(`/api/submissions/${submissionId}/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      const params = new URLSearchParams({
+        city: userCity,
+        industry: userIndustry,
+        age: String(userAge),
+        score: String(result.score),
       });
-      
-      if (res.ok) {
-        setEmailStatus('success');
-      } else {
-        setEmailStatus('error');
-      }
+      const res = await fetch(`/api/stats?${params}`);
+      const data = await res.json();
+      setStats(data);
     } catch {
-      setEmailStatus('error');
+      // Stats failed to load, will show fallback UI
     }
   };
 
-  // Fetch real stats
+  const handleUnlockSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!unlockEmail || !unlockEmail.includes('@')) return;
+    setUnlockStatus('submitting');
+    // Await the Supabase POST so the submission is in the DB before we re-fetch stats
+    await onEmailCapture?.(unlockEmail);
+    // Re-fetch stats now that our submission is included in the pool
+    await fetchStats();
+    setCaptured(true);
+  };
+
+  // Fetch real stats on mount
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        const params = new URLSearchParams({
-          city: userCity,
-          industry: userIndustry,
-          age: String(userAge),
-          score: String(result.score),
-        });
-        const res = await fetch(`/api/stats?${params}`);
-        const data = await res.json();
-        setStats(data);
-      } catch {
-        // Stats failed to load, will show fallback UI
-      }
-    }
     fetchStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userCity, userIndustry, userAge, result.score]);
 
   // Calculate comparison values from real data
   const totalUsers = stats?.totalUsers || 0;
   const hasEnoughCityData = stats?.city !== null;
   const approxRank = stats?.percentile !== null && stats?.percentile !== undefined && totalUsers > 0
-    ? Math.max(1, Math.round((1 - (stats.percentile || 0) / 100) * totalUsers))
+    ? Math.min(totalUsers, Math.round((stats.percentile / 100) * totalUsers) + 1)
     : null;
   
   // Use city avg if available, otherwise overall avg
@@ -189,6 +170,10 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
   return (
     <div className={`w-full max-w-2xl mx-auto space-y-6 ${showContent ? 'animate-slide-up' : 'opacity-0'}`}>
       
+      {/* === GATED: Hero + Breakdown + Leaderboard — blurred until email given === */}
+      <div className="relative">
+      <div className={`space-y-6${!captured ? ' blur-lg pointer-events-none select-none' : ''}`}>
+
       {/* === HERO SECTION === */}
       <div className="glass rounded-3xl p-8 text-center relative overflow-hidden">
         {/* Background glow */}
@@ -369,149 +354,143 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
         </div>
       </div>
 
-      {/* === COMBINED: PERCENTILE + BREAKDOWN === */}
-      <div className="glass rounded-3xl p-6">
-        {/* Percentile line */}
-        {stats?.percentile !== null && stats?.percentile !== undefined && (
-          <div className="text-center mb-4">
-            <span className="text-white/50 text-sm">Better than </span>
-            <span className={`text-2xl font-black ${stats.percentile >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-              {stats.percentile}%
-            </span>
-            <span className="text-white/50 text-sm"> of {totalUsers.toLocaleString()} people</span>
-          </div>
-        )}
+          {/* === COMBINED: PERCENTILE + BREAKDOWN === */}
+          <div className="glass rounded-3xl p-6">
+            {/* Percentile line */}
+            {stats?.percentile !== null && stats?.percentile !== undefined && (
+              <div className="text-center mb-4">
+                <span className="text-white/50 text-sm">Better than </span>
+                <span className={`text-2xl font-black ${stats.percentile >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                  {stats.percentile}%
+                </span>
+                <span className="text-white/50 text-sm"> of {totalUsers.toLocaleString()} people</span>
+              </div>
+            )}
 
-        {/* Compact comparison pills */}
-        {totalUsers > 0 && (cityAvg !== null || industryAvg !== null || stats?.ageGroup) && (
-          <div className="flex flex-wrap justify-center gap-2 mb-5">
-            {cityAvg !== null && (
-              <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
-                📍 {cityCompareLabel}: <span className="text-cyan-400 font-semibold">{cityAvg}%</span>
-                {result.score !== cityAvg && (
-                  <span className={result.score < cityAvg ? ' text-green-400' : ' text-red-400'}>
-                    {' '}{result.score < cityAvg ? `↑${cityAvg - result.score}pts` : `↓${result.score - cityAvg}pts`}
+            {/* Compact comparison pills */}
+            {totalUsers > 0 && (cityAvg !== null || industryAvg !== null || stats?.ageGroup) && (
+              <div className="flex flex-wrap justify-center gap-2 mb-5">
+                {cityAvg !== null && (
+                  <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
+                    📍 {cityCompareLabel}: <span className="text-cyan-400 font-semibold">{cityAvg}%</span>
+                    {result.score !== cityAvg && (
+                      <span className={result.score < cityAvg ? ' text-green-400' : ' text-red-400'}>
+                        {' '}{result.score < cityAvg ? `↑${cityAvg - result.score}pts` : `↓${result.score - cityAvg}pts`}
+                      </span>
+                    )}
                   </span>
                 )}
-              </span>
-            )}
-            {industryAvg !== null && (
-              <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
-                💼 Industry: <span className="text-purple-400 font-semibold">{industryAvg}%</span>
-                {result.score !== industryAvg && (
-                  <span className={result.score < industryAvg ? ' text-green-400' : ' text-red-400'}>
-                    {' '}{result.score < industryAvg ? `↑${industryAvg - result.score}pts` : `↓${result.score - industryAvg}pts`}
+                {industryAvg !== null && (
+                  <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
+                    💼 Industry: <span className="text-purple-400 font-semibold">{industryAvg}%</span>
+                    {result.score !== industryAvg && (
+                      <span className={result.score < industryAvg ? ' text-green-400' : ' text-red-400'}>
+                        {' '}{result.score < industryAvg ? `↑${industryAvg - result.score}pts` : `↓${result.score - industryAvg}pts`}
+                      </span>
+                    )}
                   </span>
                 )}
-              </span>
+                {stats?.ageGroup?.avgScore !== undefined && (
+                  <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
+                    🎂 Age avg: <span className="text-orange-400 font-semibold">{stats.ageGroup.avgScore}%</span>
+                  </span>
+                )}
+              </div>
             )}
-            {stats?.ageGroup?.avgScore !== undefined && (
-              <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60">
-                🎂 Age avg: <span className="text-orange-400 font-semibold">{stats.ageGroup.avgScore}%</span>
-              </span>
-            )}
-          </div>
-        )}
 
-        {/* Breakdown grid */}
-        <div className="text-xs font-semibold text-white/30 uppercase tracking-widest text-center mb-3">Your Breakdown</div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/5 rounded-2xl p-4 text-center">
-            <div className="text-2xl mb-1">💰</div>
-            <div className="text-white/50 text-xs uppercase tracking-wide">Net Worth</div>
-            <div className={`text-2xl font-bold ${result.metrics.netWorth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              ${Math.abs(result.metrics.netWorth).toLocaleString()}
-              {result.metrics.netWorth < 0 && <span className="text-sm"> debt</span>}
+            {/* Breakdown grid */}
+            <div className="text-xs font-semibold text-white/30 uppercase tracking-widest text-center mb-3">Your Breakdown</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/5 rounded-2xl p-4 text-center">
+                <div className="text-2xl mb-1">💰</div>
+                <div className="text-white/50 text-xs uppercase tracking-wide">Net Worth</div>
+                <div className={`text-2xl font-bold ${result.metrics.netWorth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  ${Math.abs(result.metrics.netWorth).toLocaleString()}
+                  {result.metrics.netWorth < 0 && <span className="text-sm"> debt</span>}
+                </div>
+                {avgNetWorth !== null && (
+                  <div className="text-white/40 text-xs mt-1">{cityCompareLabel} avg: ${avgNetWorth.toLocaleString()}</div>
+                )}
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4 text-center">
+                <div className="text-2xl mb-1">💳</div>
+                <div className="text-white/50 text-xs uppercase tracking-wide">Debt-to-Income</div>
+                <div className={`text-2xl font-bold ${result.metrics.dti <= 35 ? 'text-green-400' : result.metrics.dti <= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  {result.metrics.dti}%
+                </div>
+                <div className="text-white/40 text-xs mt-1">Healthy: under 35%</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4 text-center">
+                <div className="text-2xl mb-1">🏠</div>
+                <div className="text-white/50 text-xs uppercase tracking-wide">Rent Burden</div>
+                <div className={`text-2xl font-bold ${result.metrics.rentBurden <= 30 ? 'text-green-400' : result.metrics.rentBurden <= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  {result.metrics.rentBurden}%
+                </div>
+                <div className="text-white/40 text-xs mt-1">Ideal: under 30%</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4 text-center">
+                <div className="text-2xl mb-1">📈</div>
+                <div className="text-white/50 text-xs uppercase tracking-wide">Est. Savings Rate</div>
+                <div className={`text-2xl font-bold ${result.metrics.savingsRate >= 20 ? 'text-green-400' : result.metrics.savingsRate >= 10 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  {result.metrics.savingsRate}%
+                </div>
+                <div className="text-white/40 text-xs mt-1">
+                  {result.metrics.savingsRate === 0 ? 'Over budget' : 'Target: 20%+'}
+                </div>
+              </div>
             </div>
-            {avgNetWorth !== null && (
-              <div className="text-white/40 text-xs mt-1">{cityCompareLabel} avg: ${avgNetWorth.toLocaleString()}</div>
+
+            {/* Top issue inline */}
+            {result.topIssues[0] && (
+              <div className="mt-4 pt-4 border-t border-white/5 flex items-start gap-2">
+                <span className="text-base flex-shrink-0">🔥</span>
+                <p className="text-sm text-white/60">
+                  <span className="text-yellow-400 font-semibold">{result.topIssues[0].category}</span>
+                  {' '}— {result.topIssues[0].description}
+                </p>
+              </div>
             )}
           </div>
-          <div className="bg-white/5 rounded-2xl p-4 text-center">
-            <div className="text-2xl mb-1">💳</div>
-            <div className="text-white/50 text-xs uppercase tracking-wide">Debt-to-Income</div>
-            <div className={`text-2xl font-bold ${result.metrics.dti <= 35 ? 'text-green-400' : result.metrics.dti <= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
-              {result.metrics.dti}%
-            </div>
-            <div className="text-white/40 text-xs mt-1">Healthy: under 35%</div>
-          </div>
-          <div className="bg-white/5 rounded-2xl p-4 text-center">
-            <div className="text-2xl mb-1">🏠</div>
-            <div className="text-white/50 text-xs uppercase tracking-wide">Rent Burden</div>
-            <div className={`text-2xl font-bold ${result.metrics.rentBurden <= 30 ? 'text-green-400' : result.metrics.rentBurden <= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
-              {result.metrics.rentBurden}%
-            </div>
-            <div className="text-white/40 text-xs mt-1">Ideal: under 30%</div>
-          </div>
-          <div className="bg-white/5 rounded-2xl p-4 text-center">
-            <div className="text-2xl mb-1">📈</div>
-            <div className="text-white/50 text-xs uppercase tracking-wide">Est. Savings Rate</div>
-            <div className={`text-2xl font-bold ${result.metrics.savingsRate >= 20 ? 'text-green-400' : result.metrics.savingsRate >= 10 ? 'text-yellow-400' : 'text-red-400'}`}>
-              {result.metrics.savingsRate}%
-            </div>
-            <div className="text-white/40 text-xs mt-1">
-              {result.metrics.savingsRate === 0 ? 'Over budget' : 'Target: 20%+'}
-            </div>
-          </div>
+
+          {/* === LEADERBOARD BUTTON === */}
+          {captured && (
+            <a
+              href="/leaderboard"
+              className="block w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl flex items-center justify-center transition-all"
+            >
+              🏆 View Leaderboard
+            </a>
+          )}
         </div>
 
-        {/* Top issue inline */}
-        {result.topIssues[0] && (
-          <div className="mt-4 pt-4 border-t border-white/5 flex items-start gap-2">
-            <span className="text-base flex-shrink-0">🔥</span>
-            <p className="text-sm text-white/60">
-              <span className="text-yellow-400 font-semibold">{result.topIssues[0].category}</span>
-              {' '}— {result.topIssues[0].description}
-            </p>
+        {/* === UNLOCK OVERLAY === centered over the entire gated section */}
+        {!captured && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/30 backdrop-blur-[2px]">
+            <div className="bg-[#111111] border border-orange-500/60 rounded-2xl p-6 w-full max-w-xs mx-4 text-center shadow-2xl">
+              <div className="text-3xl mb-2">🔥</div>
+              <h3 className="font-bold text-white text-lg mb-1">How cooked are you, really?</h3>
+              <p className="text-white/50 text-sm mb-4">Drop your email to see the full breakdown — your DTI, savings rate, net worth, and where you rank. We&apos;ll also hit you up when we drop personalized tips.</p>
+              <form onSubmit={handleUnlockSubmit} className="space-y-3">
+                <input
+                  type="email"
+                  value={unlockEmail}
+                  onChange={(e) => setUnlockEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  autoFocus
+                  className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-orange-500 focus:outline-none transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!unlockEmail.includes('@') || unlockStatus === 'submitting'}
+                  className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+                >
+                  {unlockStatus === 'submitting' ? '...' : '🔥 Unlock'}
+                </button>
+              </form>
+            </div>
           </div>
         )}
       </div>
-
-      {/* === EMAIL CAPTURE === (hidden if already captured at the gate) */}
-      {!emailCaptured && <div className="glass rounded-2xl p-5 border border-orange-500/30">
-        {emailStatus === 'success' ? (
-          <div className="flex items-center gap-3">
-            <div className="text-2xl">✅</div>
-            <div>
-              <div className="font-semibold text-white">You&apos;re on the list!</div>
-              <div className="text-sm text-white/50">We&apos;ll notify you when personalized tips are ready.</div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="font-semibold text-white mb-1">💡 Get tips to get uncooked</div>
-            <div className="text-sm text-white/50 mb-3">We&apos;re building personalized recommendations. Drop your email.</div>
-            <form onSubmit={handleEmailSubmit} className="flex gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="flex-1 h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-orange-500 focus:outline-none"
-                disabled={emailStatus === 'submitting' || !submissionId}
-              />
-              <button
-                type="submit"
-                disabled={emailStatus === 'submitting' || !email || !submissionId}
-                className="h-12 px-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50"
-              >
-                {emailStatus === 'submitting' ? '...' : 'Notify Me'}
-              </button>
-            </form>
-            {emailStatus === 'error' && (
-              <p className="text-red-400 text-sm mt-2">Something went wrong. Try again?</p>
-            )}
-          </>
-        )}
-      </div>}
-
-      {/* === LEADERBOARD BUTTON === */}
-      <a
-        href="/leaderboard"
-        className="block w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl flex items-center justify-center transition-all"
-      >
-        🏆 View Leaderboard
-      </a>
 
       {/* Spacer for sticky rank footer */}
       <div className="h-20"></div>
@@ -528,7 +507,7 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
       </div>
 
       {/* Sticky Rank Footer */}
-      {approxRank !== null && totalUsers > 0 && (
+      {captured && approxRank !== null && totalUsers > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-4">
           <div className="container mx-auto px-4 pb-4 max-w-2xl">
             <a
