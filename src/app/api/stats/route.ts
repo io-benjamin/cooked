@@ -30,11 +30,23 @@ export async function GET(request: Request) {
     .from('submissions')
     .select('*', { count: 'exact', head: true });
   
-  // Get all public submissions for calculations (to match leaderboard display)
-  const { data: allSubmissions } = await supabase
-    .from('submissions')
-    .select('score, dti, rent_burden, savings_rate, net_worth, city, industry, age')
-    .eq('is_public', true);
+  // Get all public submissions for calculations — batch to bypass the 1000-row Supabase default
+  const allSubmissions: Submission[] = [];
+  {
+    const BATCH = 1000;
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('submissions')
+        .select('score, dti, rent_burden, savings_rate, net_worth, city, industry, age')
+        .eq('is_public', true)
+        .range(offset, offset + BATCH - 1);
+      if (error || !data || data.length === 0) break;
+      allSubmissions.push(...data);
+      if (data.length < BATCH) break;
+      offset += BATCH;
+    }
+  }
   
   if (!allSubmissions || allSubmissions.length === 0) {
     return NextResponse.json({

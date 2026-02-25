@@ -46,33 +46,75 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = createClient();
   const body = await request.json();
-  
+
   // Get current user (optional)
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data, error } = await supabase
+  // Core fields that always exist in the schema
+  const basePayload = {
+    user_id: user?.id || null,
+    age: body.age,
+    city: body.city,
+    industry: body.industry,
+    score: body.score,
+    tier: body.tier,
+    dti: body.dti,
+    rent_burden: body.rentBurden,
+    savings_rate: body.savingsRate,
+    net_worth: body.netWorth,
+    avatar_url: body.avatarUrl || null,
+    email: body.email || null,
+    is_public: body.isPublic ?? true,
+  };
+
+  // Try with extended columns first (requires migration to have been run)
+  let { data, error } = await supabase
     .from('submissions')
     .insert({
-      user_id: user?.id || null,
-      age: body.age,
-      city: body.city,
-      industry: body.industry,
-      score: body.score,
-      tier: body.tier,
-      dti: body.dti,
-      rent_burden: body.rentBurden,
-      savings_rate: body.savingsRate,
-      net_worth: body.netWorth,
-      avatar_url: body.avatarUrl || null,
-      email: body.email || null,
-      is_public: body.isPublic ?? true,
+      ...basePayload,
+      home_value: body.homeValue || null,
+      mortgage_balance: body.mortgageBalance || null,
+      household_size: body.householdSize || null,
+      partner_income: body.partnerIncome || null,
+      marital_status: body.maritalStatus || null,
     })
     .select()
     .single();
+
+  // If a column doesn't exist yet (Postgres error 42703), fall back to base schema
+  if (error?.code === '42703') {
+    ({ data, error } = await supabase
+      .from('submissions')
+      .insert(basePayload)
+      .select()
+      .single());
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   return NextResponse.json(data);
+}
+
+// Update email on an existing submission (called after blur-gate email capture)
+export async function PATCH(request: Request) {
+  const supabase = createClient();
+  const body = await request.json();
+  const { id, email } = body;
+
+  if (!id || !email) {
+    return NextResponse.json({ error: 'Missing id or email' }, { status: 400 });
+  }
+
+  const { error } = await supabase
+    .from('submissions')
+    .update({ email })
+    .eq('id', id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

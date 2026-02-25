@@ -34,10 +34,11 @@ const TIERS: { max: number; tier: CookedTier; emoji: string; label: string }[] =
 ];
 
 export function calculateCookedScore(inputs: UserInputs): CookedResult {
-  const totalIncome = inputs.annualIncome + (inputs.sideIncome || 0);
+  const totalIncome = inputs.annualIncome + (inputs.partnerIncome || 0) + (inputs.sideIncome || 0);
   const monthlyIncome = totalIncome / 12;
   const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
   const totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0);
+  const homeEquity = (inputs.homeValue || 0) - (inputs.mortgageBalance || 0);
   
   // Cost of living adjustment - normalize rent burden relative to city costs
   const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
@@ -62,7 +63,7 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
     dti: Math.round((totalDebt / totalIncome) * 100),
     rentBurden: Math.round((inputs.monthlyRent / monthlyIncome) * 100),
     savingsRate: estimatedSavingsRate,
-    netWorth: totalSavings - totalDebt,
+    netWorth: totalSavings - totalDebt + homeEquity,
   };
   
   // Apply age adjustment
