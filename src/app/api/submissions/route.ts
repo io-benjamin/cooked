@@ -77,6 +77,19 @@ export async function POST(request: Request) {
       household_size: body.householdSize || null,
       partner_income: body.partnerIncome || null,
       marital_status: body.maritalStatus || null,
+      user_id: user?.id || null,
+      age: body.age,
+      city: body.city,
+      industry: body.industry,
+      score: body.score,
+      tier: body.tier,
+      dti: body.dti,
+      rent_burden: body.rentBurden,
+      savings_rate: body.savingsRate,
+      net_worth: body.netWorth,
+      avatar_url: body.avatarUrl || null,
+      email: body.email || null,
+      is_public: body.isPublic ?? true,
     })
     .select()
     .single();

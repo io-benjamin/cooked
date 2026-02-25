@@ -490,7 +490,7 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Spacer for sticky rank footer */}
       <div className="h-20"></div>

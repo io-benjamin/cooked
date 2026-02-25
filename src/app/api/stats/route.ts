@@ -47,6 +47,14 @@ export async function GET(request: Request) {
       offset += BATCH;
     }
   }
+    .from('submissions')
+    .select('*', { count: 'exact', head: true });
+  
+  // Get all public submissions for calculations (to match leaderboard display)
+  const { data: allSubmissions } = await supabase
+    .from('submissions')
+    .select('score, dti, rent_burden, savings_rate, net_worth, city, industry, age')
+    .eq('is_public', true);
   
   if (!allSubmissions || allSubmissions.length === 0) {
     return NextResponse.json({
