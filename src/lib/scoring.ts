@@ -1,6 +1,9 @@
 import { UserInputs, CookedResult, CookedTier, Issue, Recommendation, ScoreBreakdown, FinancialMetrics } from '@/types/calculator';
 import { COST_OF_LIVING_INDEX } from '@/data/cities';
 
+// COL map type for dynamic COL data
+export type ColMap = Record<string, number>;
+
 // Scoring weights
 const WEIGHTS = {
   rent: 0.25,
@@ -33,7 +36,7 @@ const TIERS: { max: number; tier: CookedTier; emoji: string; label: string }[] =
   { max: 100, tier: 'ash', emoji: '💀', label: 'Ash' },
 ];
 
-export function calculateCookedScore(inputs: UserInputs): CookedResult {
+export function calculateCookedScore(inputs: UserInputs, colMap?: ColMap): CookedResult {
   const totalIncome = inputs.annualIncome + (inputs.partnerIncome || 0) + (inputs.sideIncome || 0);
   const monthlyIncome = totalIncome / 12;
   const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
@@ -41,7 +44,9 @@ export function calculateCookedScore(inputs: UserInputs): CookedResult {
   const homeEquity = (inputs.homeValue || 0) - (inputs.mortgageBalance || 0);
   
   // Cost of living adjustment - normalize rent burden relative to city costs
-  const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
+  // Use provided COL map (from Supabase) or fall back to hardcoded values
+  const colData = colMap || COST_OF_LIVING_INDEX;
+  const colIndex = colData[inputs.city] || 100;
   const colMultiplier = 100 / colIndex; // Higher COL = more forgiving on rent
   
   // Calculate individual scores (0-100, higher = more cooked)

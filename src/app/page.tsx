@@ -6,7 +6,7 @@ import { CalculatorForm } from '@/components/calculator/CalculatorForm';
 import { CookedMeter } from '@/components/results/CookedMeter';
 import { AvatarPicker } from '@/components/avatar/AvatarPicker';
 import { LiveCounter } from '@/components/LiveCounter';
-import { calculateCookedScore } from '@/lib/scoring';
+import { calculateCookedScore, ColMap } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
 type Step = 'home' | 'avatar' | 'calculator' | 'results';
@@ -36,9 +36,21 @@ export default function Home() {
   const handleSubmit = async (inputs: UserInputs) => {
     setIsLoading(true);
     setUserInputs(inputs);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Fetch COL data from Supabase (with fallback to hardcoded values)
+    let colMap: ColMap | undefined;
+    try {
+      const colRes = await fetch('/api/col');
+      if (colRes.ok) {
+        colMap = await colRes.json();
+      }
+    } catch {
+      // Will use hardcoded fallback
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const calculatedResult = calculateCookedScore(inputs);
+    const calculatedResult = calculateCookedScore(inputs, colMap);
     setResult(calculatedResult);
     setIsLoading(false);
     setStep('results');
