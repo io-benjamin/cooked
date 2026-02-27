@@ -62,6 +62,15 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-2">
+              <h2 className="text-xl font-semibold text-white">Email Communications</h2>
+              <p>
+                By providing your email address to view your results, you consent to receive occasional emails from us 
+                including progress updates, new features, and financial tips. You can unsubscribe at any time by 
+                clicking the unsubscribe link in any email.
+              </p>
+            </section>
+
+            <section className="space-y-2">
               <h2 className="text-xl font-semibold text-white">Be Nice</h2>
               <p>
                 Don&apos;t abuse the service. Don&apos;t submit fake data to mess with the averages. 

@@ -32,8 +32,24 @@ export default function PrivacyPage() {
                 (age, city, industry, income, debt, savings, etc.) to calculate your &quot;cooked&quot; score.
               </p>
               <p>
-                We do <strong className="text-white">not</strong> collect your name, email, phone number, 
-                or any other personally identifiable information.
+                To view your full results, we ask for your <strong className="text-white">email address</strong>. 
+                This is the only personally identifiable information we collect.
+              </p>
+            </section>
+
+            <section className="space-y-2">
+              <h2 className="text-xl font-semibold text-white">How We Use Your Email</h2>
+              <p>
+                We may use your email to:
+              </p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Send you updates about your financial progress</li>
+                <li>Notify you about new features or seasonal challenges</li>
+                <li>Share occasional financial tips and resources</li>
+              </ul>
+              <p className="mt-2">
+                We will <strong className="text-white">never</strong> sell your email to third parties or spam you.
+                You can unsubscribe at any time.
               </p>
             </section>
 
