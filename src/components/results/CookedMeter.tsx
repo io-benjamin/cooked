@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CookedResult } from '@/types/calculator';
 import { ShareCard } from './ShareCard';
+import { AffiliateRecommendations } from './AffiliateRecommendations';
 
 interface CookedMeterProps {
   result: CookedResult;
@@ -461,6 +462,9 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               🏆 View Leaderboard
             </a>
           )}
+
+          {/* === AFFILIATE RECOMMENDATIONS === */}
+          {captured && <AffiliateRecommendations result={result} />}
         </div>
 
         {/* === UNLOCK OVERLAY === centered over the entire gated section */}
