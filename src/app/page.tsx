@@ -65,23 +65,52 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Demographics
           age: userInputs.age,
           city: userInputs.city,
           industry: userInputs.industry,
+          experienceLevel: userInputs.experienceLevel || null,
+          jobTitle: userInputs.jobTitle || null,
+          
+          // Income
+          annualIncome: userInputs.annualIncome,
+          sideIncome: userInputs.sideIncome || null,
+          partnerIncome: userInputs.partnerIncome || null,
+          maritalStatus: userInputs.maritalStatus || null,
+          householdSize: userInputs.householdSize || null,
+          
+          // Housing
+          monthlyRent: userInputs.monthlyRent,
+          livingArrangement: userInputs.livingArrangement || null,
+          homeValue: userInputs.homeValue || null,
+          mortgageBalance: userInputs.mortgageBalance || null,
+          
+          // Debt
+          studentLoans: userInputs.studentLoans || 0,
+          creditCardDebt: userInputs.creditCardDebt || 0,
+          carLoan: userInputs.carLoan || 0,
+          otherDebt: userInputs.otherDebt || 0,
+          
+          // Savings
+          totalSavings: userInputs.totalSavings || 0,
+          retirementSavings: userInputs.retirementSavings || 0,
+          investments: userInputs.investments || 0,
+          
+          // Credit
+          creditScore: userInputs.creditScore || null,
+          
+          // Calculated metrics
           score: result.score,
           tier: result.tier,
           dti: result.metrics.dti,
           rentBurden: result.metrics.rentBurden,
           savingsRate: result.metrics.savingsRate,
           netWorth: result.metrics.netWorth,
+          
+          // Meta
           avatarUrl: avatarUrl,
           isPublic: true,
           email,
-          homeValue: userInputs.homeValue || null,
-          mortgageBalance: userInputs.mortgageBalance || null,
-          householdSize: userInputs.householdSize || null,
-          partnerIncome: userInputs.partnerIncome || null,
-          maritalStatus: userInputs.maritalStatus || null,
         }),
       });
       const data = await res.json();
