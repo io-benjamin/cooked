@@ -56,7 +56,9 @@ export async function POST(request: Request) {
   
   const totalSavings = (body.totalSavings || 0) + 
                        (body.retirementSavings || 0) + 
-                       (body.investments || 0);
+                       (body.investments || 0) +
+                       (body.crypto || 0) +
+                       (body.brokerage || 0);
 
   // Full payload with all fields
   const fullPayload = {
@@ -94,6 +96,8 @@ export async function POST(request: Request) {
     emergency_savings: body.totalSavings || 0, // emergency/liquid savings
     retirement_savings: body.retirementSavings || 0,
     investments: body.investments || 0,
+    crypto: body.crypto || 0,
+    brokerage: body.brokerage || 0,
     total_savings: totalSavings,
     
     // Credit

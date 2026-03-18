@@ -41,6 +41,8 @@ You are a direct, no-BS financial advisor analyzing someone's financial health. 
     "emergency": 2000,
     "retirement": 12000,
     "investments": 0,
+    "crypto": 0,
+    "brokerage": 0,
     "total": 14000
   },
   "creditScore": 680,

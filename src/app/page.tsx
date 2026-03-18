@@ -95,6 +95,8 @@ export default function Home() {
           totalSavings: userInputs.totalSavings || 0,
           retirementSavings: userInputs.retirementSavings || 0,
           investments: userInputs.investments || 0,
+          crypto: userInputs.crypto || 0,
+          brokerage: userInputs.brokerage || 0,
           
           // Credit
           creditScore: userInputs.creditScore || null,

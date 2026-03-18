@@ -33,6 +33,8 @@ ALTER TABLE submissions ADD COLUMN IF NOT EXISTS total_debt INTEGER; -- computed
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS emergency_savings INTEGER DEFAULT 0;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS retirement_savings INTEGER DEFAULT 0;
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS investments INTEGER DEFAULT 0;
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS crypto INTEGER DEFAULT 0; -- crypto holdings
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS brokerage INTEGER DEFAULT 0; -- brokerage/stock accounts
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS total_savings INTEGER; -- computed total
 
 -- ============================================

@@ -29,6 +29,8 @@ export interface UserInputs {
   totalSavings: number;
   retirementSavings: number;
   investments?: number;
+  crypto?: number;        // Crypto holdings (BTC, ETH, etc.)
+  brokerage?: number;     // Brokerage/stock accounts
   
   // Section 6: Credit
   creditScore?: number;

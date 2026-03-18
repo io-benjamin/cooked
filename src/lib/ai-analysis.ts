@@ -41,6 +41,8 @@ interface AnalysisInput {
     emergency: number;
     retirement: number;
     investments: number;
+    crypto: number;
+    brokerage: number;
     total: number;
   };
   creditScore?: number;
@@ -119,7 +121,7 @@ export function prepareAnalysisInput(
   const totalIncome = inputs.annualIncome + (inputs.partnerIncome || 0) + (inputs.sideIncome || 0);
   const monthlyIncome = totalIncome / 12;
   const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
-  const totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0);
+  const totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0) + (inputs.crypto || 0) + (inputs.brokerage || 0);
   
   // Estimate monthly expenses for emergency fund calculation
   const estimatedMonthlyExpenses = inputs.monthlyRent + (monthlyIncome * 0.3);
@@ -153,6 +155,8 @@ export function prepareAnalysisInput(
       emergency: inputs.totalSavings,
       retirement: inputs.retirementSavings,
       investments: inputs.investments || 0,
+      crypto: inputs.crypto || 0,
+      brokerage: inputs.brokerage || 0,
       total: totalSavings,
     },
     creditScore: inputs.creditScore,

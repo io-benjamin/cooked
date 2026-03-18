@@ -34,6 +34,8 @@ export interface Submission {
   emergency_savings?: number;
   retirement_savings?: number;
   investments?: number;
+  crypto?: number;
+  brokerage?: number;
   total_savings?: number;
   
   // Credit
