@@ -436,6 +436,34 @@ export function CalculatorForm({ onSubmit, isLoading }: CalculatorFormProps) {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-white/70">Brokerage accounts (stocks, ETFs)</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-lg">$</span>
+                  <Input
+                    type="number"
+                    className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
+                    placeholder="0"
+                    value={getNumberValue('brokerage')}
+                    onChange={(e) => handleNumberChange('brokerage', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white/70">Crypto (BTC, ETH, etc.)</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-lg">$</span>
+                  <Input
+                    type="number"
+                    className="h-14 text-lg pl-8 bg-white/5 border-white/10 rounded-xl focus:border-orange-500"
+                    placeholder="0"
+                    value={getNumberValue('crypto')}
+                    onChange={(e) => handleNumberChange('crypto', e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
