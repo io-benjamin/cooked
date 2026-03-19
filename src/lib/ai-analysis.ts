@@ -1,6 +1,8 @@
 /**
  * AI Financial Analysis Module
- * Uses local Ollama model with FINANCIAL_ADVISOR.md instructions
+ * Uses Groq API (fast, cheap, OpenAI-compatible)
+ * 
+ * Get your free API key at: https://console.groq.com
  */
 
 import { UserInputs, FinancialMetrics, CookedResult } from '@/types/calculator';
@@ -8,10 +10,17 @@ import fs from 'fs';
 import path from 'path';
 
 // Load the system prompt from markdown file
-const SYSTEM_PROMPT = fs.readFileSync(
-  path.join(process.cwd(), 'prompts', 'FINANCIAL_ADVISOR.md'),
-  'utf-8'
-);
+const getSystemPrompt = () => {
+  try {
+    return fs.readFileSync(
+      path.join(process.cwd(), 'prompts', 'FINANCIAL_ADVISOR.md'),
+      'utf-8'
+    );
+  } catch {
+    // Fallback for edge runtime or if file not found
+    return `You are a direct, no-BS financial advisor. Analyze the user's financial data and provide structured JSON output with: summary, rootCauses, detectedHabits, peerComparison, actionPlan, targets, and encouragement. Be brutally honest but helpful. Use their actual numbers - specific dollar amounts and percentages. This is for entertainment purposes only, not real financial advice.`;
+  }
+};
 
 interface AnalysisInput {
   demographics: {
@@ -170,46 +179,65 @@ export function prepareAnalysisInput(
 }
 
 /**
- * Call local Ollama model for analysis
+ * Call Groq API for analysis
+ * Uses llama-3.1-8b-instant (fast) or llama-3.3-70b-versatile (better quality)
  */
-export async function analyzeWithLocalModel(
+export async function analyzeWithGroq(
   input: AnalysisInput,
-  model: string = 'llama3.1:8b'
+  model: string = 'llama-3.1-8b-instant'
 ): Promise<AIAnalysisResult> {
-  const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+  const apiKey = process.env.GROQ_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY is not set. Get your free key at https://console.groq.com');
+  }
+
+  const systemPrompt = getSystemPrompt();
   
   const userPrompt = `Analyze this person's financial situation and provide your analysis in the exact JSON format specified in your instructions.
 
 INPUT DATA:
 ${JSON.stringify(input, null, 2)}
 
-Respond ONLY with valid JSON matching the structure in your instructions. No markdown, no explanation, just the JSON object.`;
+Respond ONLY with valid JSON matching the structure in your instructions. No markdown code blocks, no explanation, just the raw JSON object starting with { and ending with }.`;
 
-  const response = await fetch(`${ollamaUrl}/api/generate`, {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
       model,
-      prompt: userPrompt,
-      system: SYSTEM_PROMPT,
-      stream: false,
-      options: {
-        temperature: 0.7,
-        num_predict: 4096,
-      },
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 4096,
+      response_format: { type: 'json_object' }, // Force JSON output
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Ollama error: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({}));
+    console.error('Groq API error:', errorData);
+    throw new Error(`Groq API error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
   
+  // Extract the content from the response
+  const content = data.choices?.[0]?.message?.content;
+  
+  if (!content) {
+    throw new Error('No content in Groq response');
+  }
+
   // Parse the JSON response
   try {
-    // Clean up response - sometimes models wrap in markdown
-    let jsonStr = data.response.trim();
+    // Clean up response - sometimes models wrap in markdown despite instructions
+    let jsonStr = content.trim();
     if (jsonStr.startsWith('```json')) {
       jsonStr = jsonStr.slice(7);
     }
@@ -222,7 +250,7 @@ Respond ONLY with valid JSON matching the structure in your instructions. No mar
     
     return JSON.parse(jsonStr.trim());
   } catch (e) {
-    console.error('Failed to parse AI response:', data.response);
+    console.error('Failed to parse AI response:', content);
     throw new Error('Failed to parse AI analysis response');
   }
 }
@@ -241,5 +269,7 @@ export async function getAIAnalysis(
     result.tier
   );
   
-  return analyzeWithLocalModel(analysisInput);
+  // Use Groq with llama-3.1-8b-instant (fast & cheap)
+  // Alternative: 'llama-3.3-70b-versatile' for better quality
+  return analyzeWithGroq(analysisInput, 'llama-3.1-8b-instant');
 }
