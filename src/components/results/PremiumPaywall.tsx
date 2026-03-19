@@ -142,6 +142,9 @@ export function PremiumPaywall({ score, tier, onUnlock }: PremiumPaywallProps) {
             <p className="text-white/30 text-xs mt-3">
               One-time payment • Instant access • No subscription
             </p>
+            <p className="text-white/20 text-xs mt-2">
+              For entertainment only. Not financial advice.
+            </p>
           </div>
         </div>
       </div>

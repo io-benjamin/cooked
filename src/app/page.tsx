@@ -140,11 +140,7 @@ export default function Home() {
       <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-orange-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
       <div className="fixed bottom-0 right-0 w-[400px] h-[400px] bg-gradient-to-tl from-red-500/10 to-transparent blur-3xl pointer-events-none hidden sm:block" />
 
-      {/* Floating emojis */}
-      <div className="fixed top-20 left-[10%] text-4xl animate-float opacity-20" style={{ animationDelay: '0s' }}>🔥</div>
-      <div className="fixed top-40 right-[15%] text-3xl animate-float opacity-20" style={{ animationDelay: '1s' }}>💀</div>
-      <div className="fixed bottom-40 left-[20%] text-3xl animate-float opacity-20" style={{ animationDelay: '2s' }}>🥩</div>
-      <div className="fixed bottom-60 right-[10%] text-4xl animate-float opacity-20" style={{ animationDelay: '0.5s' }}>🖤</div>
+
 
       {/* Header */}
       <header className="relative z-50 border-b border-white/5">
@@ -300,13 +296,15 @@ export default function Home() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-white/30">
             <div className="flex items-center gap-2">
-              <span>🔥</span>
               <span>am i cooked? © 2026</span>
             </div>
             <div className="flex gap-6">
               <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
             </div>
+          </div>
+          <div className="text-center mt-4 text-xs text-white/20">
+            For entertainment purposes only. This is not financial advice. Consult a qualified financial advisor for personalized guidance.
           </div>
         </div>
       </footer>
