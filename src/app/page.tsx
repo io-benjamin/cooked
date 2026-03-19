@@ -197,7 +197,7 @@ export default function Home() {
                   <span className="gradient-text">cooked?</span>
                 </h1>
                 <p className="text-xl sm:text-2xl text-white/50 max-w-xl mx-auto leading-relaxed">
-                  Create your character. Enter your stats. Watch yourself get roasted.
+                  Enter your real numbers. Get your honest score. Find out what's actually killing your finances.
                 </p>
               </div>
 
@@ -217,16 +217,16 @@ export default function Home() {
 
               <div className="flex flex-wrap justify-center gap-6 pt-8 text-sm text-white/40">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">🎨</span>
-                  <span>Custom Avatar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🔥</span>
-                  <span>Watch it burn</span>
+                  <span className="text-xl">🔍</span>
+                  <span>See what's hurting you</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">📊</span>
-                  <span>Real comparisons</span>
+                  <span>Compare to 1,200+ others</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📋</span>
+                  <span>Get your action plan</span>
                 </div>
               </div>
 

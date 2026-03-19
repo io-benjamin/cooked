@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CookedResult } from '@/types/calculator';
 import { ShareCard } from './ShareCard';
+import { PremiumPaywall } from './PremiumPaywall';
 
 interface CookedMeterProps {
   result: CookedResult;
@@ -451,6 +452,18 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
               </div>
             )}
           </div>
+
+          {/* === PREMIUM PAYWALL — AI Analysis === */}
+          {captured && (
+            <PremiumPaywall 
+              score={result.score} 
+              tier={tier.name}
+              onUnlock={() => {
+                // TODO: Handle unlock - show full AI analysis
+                console.log('Premium unlocked!');
+              }}
+            />
+          )}
 
           {/* === LEADERBOARD BUTTON === */}
           {captured && (
