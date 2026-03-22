@@ -16,8 +16,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
+    // Get base URL for internal API calls
+    const baseUrl = request.nextUrl.origin;
+    
     const result = calculateCookedScore(inputs);
-    const analysis = await getAIAnalysis(inputs, result);
+    const analysis = await getAIAnalysis(inputs, result, baseUrl);
     
     return NextResponse.json({
       score: result.score,

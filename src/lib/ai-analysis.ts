@@ -104,6 +104,45 @@ const getSystemPrompt = () => {
   }
 };
 
+// Peer comparison data from our actual user submissions
+interface PeerData {
+  city: {
+    avgScore: number;
+    avgRentBurden: number;
+    avgDti: number;
+    avgSavingsRate: number;
+    avgNetWorth: number;
+    count: number;
+  } | null;
+  ageGroup: {
+    avgScore: number;
+    avgRentBurden: number;
+    avgDti: number;
+    avgSavingsRate: number;
+    avgNetWorth: number;
+    count: number;
+    range: string;
+  } | null;
+  industry: {
+    avgScore: number;
+    avgRentBurden: number;
+    avgDti: number;
+    avgSavingsRate: number;
+    avgNetWorth: number;
+    count: number;
+  } | null;
+  overall: {
+    avgScore: number;
+    avgRentBurden: number;
+    avgDti: number;
+    avgSavingsRate: number;
+    avgNetWorth: number;
+    count: number;
+  } | null;
+  percentile: number | null;
+  totalUsers: number;
+}
+
 interface AnalysisInput {
   demographics: {
     age: number;
@@ -119,6 +158,7 @@ interface AnalysisInput {
     isHighCOL: boolean;
     isLowCOL: boolean;
   };
+  peerComparison: PeerData;
   income: {
     annual: number;
     monthly: number;
@@ -210,14 +250,83 @@ export interface AIAnalysisResult {
 }
 
 /**
+ * Fetch real peer comparison data from our submissions database
+ */
+export async function fetchPeerData(
+  city: string,
+  industry: string,
+  age: number,
+  score: number,
+  baseUrl?: string
+): Promise<PeerData> {
+  try {
+    const url = new URL('/api/stats', baseUrl || 'http://localhost:3000');
+    url.searchParams.set('city', city);
+    url.searchParams.set('industry', industry);
+    url.searchParams.set('age', String(age));
+    url.searchParams.set('score', String(score));
+    
+    const res = await fetch(url.toString());
+    if (!res.ok) {
+      console.error('Failed to fetch peer data:', res.status);
+      return { city: null, ageGroup: null, industry: null, overall: null, percentile: null, totalUsers: 0 };
+    }
+    
+    const data = await res.json();
+    
+    return {
+      city: data.city ? {
+        avgScore: data.city.avgScore,
+        avgRentBurden: data.city.avgRentBurden,
+        avgDti: data.city.avgDti,
+        avgSavingsRate: data.city.avgSavingsRate,
+        avgNetWorth: data.city.avgNetWorth,
+        count: data.city.count,
+      } : null,
+      ageGroup: data.ageGroup ? {
+        avgScore: data.ageGroup.avgScore,
+        avgRentBurden: data.ageGroup.avgRentBurden,
+        avgDti: data.ageGroup.avgDti,
+        avgSavingsRate: data.ageGroup.avgSavingsRate,
+        avgNetWorth: data.ageGroup.avgNetWorth,
+        count: data.ageGroup.count,
+        range: data.ageGroup.range,
+      } : null,
+      industry: data.industry ? {
+        avgScore: data.industry.avgScore,
+        avgRentBurden: data.industry.avgRentBurden,
+        avgDti: data.industry.avgDti,
+        avgSavingsRate: data.industry.avgSavingsRate,
+        avgNetWorth: data.industry.avgNetWorth,
+        count: data.industry.count,
+      } : null,
+      overall: data.overall ? {
+        avgScore: data.overall.avgScore,
+        avgRentBurden: data.overall.avgRentBurden,
+        avgDti: data.overall.avgDti,
+        avgSavingsRate: data.overall.avgSavingsRate,
+        avgNetWorth: data.overall.avgNetWorth,
+        count: data.overall.count,
+      } : null,
+      percentile: data.percentile,
+      totalUsers: data.totalUsers || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching peer data:', error);
+    return { city: null, ageGroup: null, industry: null, overall: null, percentile: null, totalUsers: 0 };
+  }
+}
+
+/**
  * Prepare user inputs for AI analysis
  */
-export function prepareAnalysisInput(
+export async function prepareAnalysisInput(
   inputs: UserInputs,
   metrics: FinancialMetrics,
   score: number,
-  tier: string
-): AnalysisInput {
+  tier: string,
+  baseUrl?: string
+): Promise<AnalysisInput> {
   const totalIncome = inputs.annualIncome + (inputs.partnerIncome || 0) + (inputs.sideIncome || 0);
   const monthlyIncome = totalIncome / 12;
   const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
@@ -230,6 +339,9 @@ export function prepareAnalysisInput(
   // Get city-specific context
   const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
   const cityData = CITY_CONTEXT[inputs.city];
+
+  // Fetch real peer comparison data from our database
+  const peerData = await fetchPeerData(inputs.city, inputs.industry, inputs.age, score, baseUrl);
 
   return {
     demographics: {
@@ -246,6 +358,7 @@ export function prepareAnalysisInput(
       isHighCOL: colIndex >= 130,
       isLowCOL: colIndex <= 85,
     },
+    peerComparison: peerData,
     income: {
       annual: inputs.annualIncome,
       monthly: Math.round(monthlyIncome),
@@ -364,13 +477,15 @@ Respond ONLY with valid JSON matching the structure in your instructions. No mar
  */
 export async function getAIAnalysis(
   inputs: UserInputs,
-  result: CookedResult
+  result: CookedResult,
+  baseUrl?: string
 ): Promise<AIAnalysisResult> {
-  const analysisInput = prepareAnalysisInput(
+  const analysisInput = await prepareAnalysisInput(
     inputs,
     result.metrics,
     result.score,
-    result.tier
+    result.tier,
+    baseUrl
   );
   
   // Use Groq with llama-3.1-8b-instant (fast & cheap)
