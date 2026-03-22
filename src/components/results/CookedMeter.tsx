@@ -136,7 +136,7 @@ export function CookedMeter({ result }: CookedMeterProps) {
         </div>
         
         {/* Score with Ring */}
-        <div className="relative inline-block mb-6">
+        <div className="relative inline-block mb-10">
           {/* Glow behind score */}
           <div 
             className="absolute inset-[-40px] rounded-full animate-glow-pulse blur-[40px]"
@@ -183,7 +183,7 @@ export function CookedMeter({ result }: CookedMeterProps) {
               />
             </svg>
             
-            {/* Score number in center */}
+            {/* Score + Tier in center */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div 
                 className="font-display font-black leading-none tracking-tight"
@@ -196,41 +196,25 @@ export function CookedMeter({ result }: CookedMeterProps) {
               >
                 {animatedScore}
               </div>
-              <span className="text-white/30 text-xs font-medium uppercase tracking-widest mt-1">
-                Score
-              </span>
+              {/* Tier inside ring */}
+              <div 
+                className="flex items-center gap-1.5 mt-2"
+                style={{ color: tier.colorLight }}
+              >
+                <span className="text-lg">{tier.emoji}</span>
+                <span className="font-display font-bold text-sm uppercase tracking-wider">
+                  {tier.name}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Tier Badge */}
-        <div 
-          className={`inline-flex items-center gap-3 px-6 py-3 rounded-full mb-10 relative overflow-hidden ${showContent ? 'animate-reveal-up' : ''}`}
-          style={{ 
-            animationDelay: '0.3s',
-            background: `linear-gradient(135deg, ${tier.color}30 0%, ${tier.color}10 100%)`,
-            border: `1px solid ${tier.color}50`,
-          }}
-        >
-          {/* Shimmer effect */}
-          <div 
-            className="absolute inset-0 animate-shimmer"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
-          />
-          <span className="text-2xl relative z-10">{tier.emoji}</span>
-          <span 
-            className="font-display font-bold text-lg uppercase tracking-wider relative z-10"
-            style={{ color: tier.colorLight }}
-          >
-            {tier.name}
-          </span>
         </div>
         
         {/* Issue Card */}
         <div 
           className={`rounded-2xl p-6 mb-8 text-left relative overflow-hidden ${showContent ? 'animate-reveal-up' : ''}`}
           style={{ 
-            animationDelay: '0.5s',
+            animationDelay: '0.3s',
             background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
             border: '1px solid rgba(255,255,255,0.08)',
           }}
@@ -257,7 +241,7 @@ export function CookedMeter({ result }: CookedMeterProps) {
         </div>
         
         {/* CTA Button */}
-        <div className={showContent ? 'animate-reveal-up' : ''} style={{ animationDelay: '0.7s' }}>
+        <div className={showContent ? 'animate-reveal-up' : ''} style={{ animationDelay: '0.5s' }}>
           <button 
             className="w-full py-5 rounded-2xl font-display font-bold text-lg text-white relative overflow-hidden group transition-all duration-300 hover:-translate-y-1"
             style={{ 
