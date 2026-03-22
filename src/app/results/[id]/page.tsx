@@ -76,7 +76,6 @@ export default function ResultsPage() {
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [hasEmail, setHasEmail] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [percentile, setPercentile] = useState<number | null>(null);
   const [totalUsers, setTotalUsers] = useState<number>(0);
 
@@ -111,16 +110,6 @@ export default function ResultsPage() {
     }
     fetchData();
   }, [id]);
-
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback: do nothing silently
-    }
-  };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,14 +208,6 @@ export default function ResultsPage() {
               className="absolute inset-0 opacity-30"
               style={{ background: `radial-gradient(ellipse at center, ${tier.color}30 0%, transparent 70%)` }}
             />
-
-            {/* Share button */}
-            <button
-              onClick={handleShare}
-              className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white text-xs font-medium transition-all"
-            >
-              {copied ? '✓ Copied!' : '🔗 Share'}
-            </button>
 
             <div className="relative">
               {/* Avatar */}

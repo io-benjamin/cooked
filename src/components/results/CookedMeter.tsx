@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { CookedResult } from '@/types/calculator';
-import { ShareCard } from './ShareCard';
 import { PremiumPaywall } from './PremiumPaywall';
 
 interface CookedMeterProps {
@@ -43,13 +42,11 @@ interface StatsData {
 export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl, emailCaptured = false, onEmailCapture }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState<StatsData | null>(null);
   // Blur soft-gate: starts locked unless email was already captured at a prior step
   const [captured, setCaptured] = useState(emailCaptured);
   const [unlockEmail, setUnlockEmail] = useState('');
   const [unlockStatus, setUnlockStatus] = useState<'idle' | 'submitting'>('idle');
-  const shareCardRef = useRef<HTMLDivElement>(null);
   const tier = getTier(result.score);
   const flameIntensity = result.score / 100;
 
@@ -122,52 +119,6 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
     return () => clearInterval(timer);
   }, [result.score]);
 
-  const generateImage = async (): Promise<Blob | null> => {
-    if (!shareCardRef.current) return null;
-    const html2canvas = (await import('html2canvas')).default;
-    const canvas = await html2canvas(shareCardRef.current, {
-      backgroundColor: '#0a0a0a',
-      scale: 2,
-      logging: false,
-      useCORS: true,
-    });
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
-    });
-  };
-
-  const handleShare = async () => {
-    const comparisonText = hasEnoughCityData 
-      ? `Compared to ${userCity} average: ${result.score < (cityAvg || 0) ? 'better' : 'worse'}`
-      : `Out of ${totalUsers} submissions`;
-    const text = `I'm ${result.score}% cooked 🔥\n\n${comparisonText}\n\nFind out how cooked you are: financiallycooked.com`;
-    
-    if (navigator.share && navigator.canShare) {
-      setIsGenerating(true);
-      try {
-        const blob = await generateImage();
-        if (blob) {
-          const file = new File([blob], 'cooked.png', { type: 'image/png' });
-          const shareData = { text, files: [file] };
-          if (navigator.canShare(shareData)) {
-            await navigator.share(shareData);
-            return;
-          }
-        }
-      } catch {
-        // Fall back
-      } finally {
-        setIsGenerating(false);
-      }
-    }
-    
-    if (navigator.share) {
-      try { await navigator.share({ text }); } catch { /* cancelled */ }
-    } else {
-      navigator.clipboard.writeText(text);
-    }
-  };
-
   return (
     <div className={`w-full max-w-2xl mx-auto space-y-6 ${showContent ? 'animate-slide-up' : 'opacity-0'}`}>
       
@@ -185,15 +136,6 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
           }}
         />
 
-        {/* Share button */}
-        <button
-          onClick={handleShare}
-          disabled={isGenerating}
-          className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white text-xs font-medium transition-all disabled:opacity-50"
-        >
-          {isGenerating ? '...' : '🔗 Share'}
-        </button>
-        
         {/* Avatar with flames */}
         <div className="relative inline-block mb-6">
           {/* Flames behind - simplified on mobile */}
@@ -507,17 +449,6 @@ export function CookedMeter({ result, userCity, userAge, userIndustry, avatarUrl
 
       {/* Spacer for sticky rank footer */}
       <div className="h-20"></div>
-
-      {/* Hidden ShareCard */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
-        <ShareCard
-          ref={shareCardRef}
-          result={result}
-          avatarUrl={avatarUrl}
-          userCity={userCity}
-          userAge={userAge}
-        />
-      </div>
 
       {/* Sticky Rank Footer */}
       {captured && approxRank !== null && totalUsers > 0 && (
