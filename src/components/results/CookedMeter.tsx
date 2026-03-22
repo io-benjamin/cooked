@@ -145,23 +145,71 @@ export function CookedMeter({ result }: CookedMeterProps) {
       <main className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
         <div className={`max-w-lg w-full text-center transition-opacity duration-500 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
           
-          {/* Score */}
+          {/* Score with Ring */}
           <div className="relative inline-block mb-6">
             {/* Glow behind score */}
             <div 
               className="absolute inset-[-40px] rounded-full animate-glow-pulse blur-[40px]"
               style={{ background: `radial-gradient(circle, ${tier.color}40 0%, transparent 70%)` }}
             />
-            <div 
-              className="relative font-display font-black leading-[0.85] tracking-tight"
-              style={{ 
-                fontSize: 'clamp(120px, 30vw, 200px)',
-                background: 'linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.6) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              {animatedScore}
+            
+            {/* Progress Ring Container */}
+            <div className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px]">
+              {/* SVG Ring */}
+              <svg 
+                className="w-full h-full -rotate-90"
+                viewBox="0 0 320 320"
+              >
+                <defs>
+                  <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor={tier.color} />
+                    <stop offset="100%" stopColor={tier.colorLight} />
+                  </linearGradient>
+                </defs>
+                {/* Background ring */}
+                <circle
+                  cx="160"
+                  cy="160"
+                  r="140"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.04)"
+                  strokeWidth="12"
+                />
+                {/* Progress ring */}
+                <circle
+                  cx="160"
+                  cy="160"
+                  r="140"
+                  fill="none"
+                  stroke="url(#ringGradient)"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 140}
+                  strokeDashoffset={2 * Math.PI * 140 * (1 - animatedScore / 100)}
+                  style={{
+                    filter: `drop-shadow(0 0 12px ${tier.color}80)`,
+                    transition: 'stroke-dashoffset 0.1s ease-out',
+                  }}
+                />
+              </svg>
+              
+              {/* Score number in center */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div 
+                  className="font-display font-black leading-none tracking-tight"
+                  style={{ 
+                    fontSize: 'clamp(72px, 18vw, 96px)',
+                    background: 'linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.6) 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  {animatedScore}
+                </div>
+                <span className="text-white/30 text-xs font-medium uppercase tracking-widest mt-1">
+                  Score
+                </span>
+              </div>
             </div>
           </div>
           
