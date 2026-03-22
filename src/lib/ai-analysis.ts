@@ -140,7 +140,7 @@ export async function getAIAnalysis(
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: getSystemPrompt() },
         { 
