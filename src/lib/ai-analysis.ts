@@ -1,18 +1,17 @@
 /**
  * AI Financial Analysis Module
  * 
- * Data sources (in order of preference):
- * 1. Our user submissions database
- * 2. Real-time web search for actual statistics (fallback)
+ * Data sources:
+ * 1. Our user submissions database (primary)
+ * 2. AI's training knowledge (fallback for missing data)
  */
 
 import { UserInputs, FinancialMetrics, CookedResult } from '@/types/calculator';
 import { getAllPeerData } from './peer-queries';
-import { searchCityData, searchIndustryData, searchAgeGroupData } from './web-data';
 import fs from 'fs';
 import path from 'path';
 
-const MIN_USERS_FOR_COMPARISON = 5; // Minimum users needed before we trust our data
+const MIN_USERS_FOR_COMPARISON = 5;
 
 const getSystemPrompt = () => {
   try {
@@ -21,7 +20,7 @@ const getSystemPrompt = () => {
       'utf-8'
     );
   } catch {
-    return `You are a financial advisor. Compare user data to peer data and web data. Be specific with numbers. Output JSON.`;
+    return `You are a financial advisor. Compare user data to peer data. When peer data is missing, use your knowledge of real statistics (Census, BLS, etc). Be specific with numbers. Output JSON.`;
   }
 };
 
@@ -54,40 +53,13 @@ export async function getAIAnalysis(
   result: CookedResult
 ): Promise<AIAnalysisResult> {
   
-  // 1. Query our database first
+  // Query our database for peer comparisons
   const peerData = await getAllPeerData(
     inputs.city,
     inputs.age,
     inputs.industry,
     result.score
   );
-  
-  // 2. For any category with insufficient data, search the web
-  const webData: Record<string, unknown> = {};
-  
-  // City data fallback
-  if (peerData.city.count < MIN_USERS_FOR_COMPARISON) {
-    const cityWebData = await searchCityData(inputs.city);
-    if (cityWebData) {
-      webData.city = cityWebData;
-    }
-  }
-  
-  // Industry data fallback
-  if (peerData.industry.count < MIN_USERS_FOR_COMPARISON) {
-    const industryWebData = await searchIndustryData(inputs.industry);
-    if (industryWebData) {
-      webData.industry = industryWebData;
-    }
-  }
-  
-  // Age group data fallback
-  if (peerData.ageGroup.count < MIN_USERS_FOR_COMPARISON) {
-    const ageWebData = await searchAgeGroupData(inputs.age);
-    if (ageWebData) {
-      webData.ageGroup = ageWebData;
-    }
-  }
   
   // Build input for AI
   const analysisInput = {
@@ -116,17 +88,15 @@ export async function getAIAnalysis(
       },
     },
     
-    // Data from our user submissions
+    // Data from our submissions (null if insufficient)
     ourData: {
       city: peerData.city.count >= MIN_USERS_FOR_COMPARISON ? {
         source: 'our users',
-        city: peerData.city.city,
         count: peerData.city.count,
         avgScore: peerData.city.avgScore,
         avgIncome: peerData.city.avgIncome,
         avgRent: peerData.city.avgRent,
         avgNetWorth: peerData.city.avgNetWorth,
-        avgRentBurden: peerData.city.avgRentBurden,
       } : null,
       
       ageGroup: peerData.ageGroup.count >= MIN_USERS_FOR_COMPARISON ? {
@@ -140,7 +110,6 @@ export async function getAIAnalysis(
       
       industry: peerData.industry.count >= MIN_USERS_FOR_COMPARISON ? {
         source: 'our users',
-        industry: peerData.industry.industry,
         count: peerData.industry.count,
         avgScore: peerData.industry.avgScore,
         avgIncome: peerData.industry.avgIncome,
@@ -151,15 +120,10 @@ export async function getAIAnalysis(
         source: 'our users',
         count: peerData.overall.count,
         avgScore: peerData.overall.avgScore,
-        avgIncome: peerData.overall.avgIncome,
-        avgNetWorth: peerData.overall.avgNetWorth,
       } : null,
       
       percentile: peerData.percentile,
     },
-    
-    // Fallback data from web search (when our data is insufficient)
-    webData: Object.keys(webData).length > 0 ? webData : null,
   };
 
   // Call Groq
@@ -185,16 +149,16 @@ export async function getAIAnalysis(
 USER DATA:
 ${JSON.stringify(analysisInput.user, null, 2)}
 
-DATA FROM OUR USERS (real submissions):
+PEER DATA FROM OUR DATABASE:
 ${JSON.stringify(analysisInput.ourData, null, 2)}
 
-${analysisInput.webData ? `FALLBACK WEB DATA (for categories where we lack user data):
-${JSON.stringify(analysisInput.webData, null, 2)}
+INSTRUCTIONS:
+- When ourData has values: use those real numbers and cite "Based on X users..."
+- When ourData is null: use your knowledge of real statistics (Census, BLS, cost of living data) for their city/industry/age group. Cite the source (e.g., "According to Census data..." or "BLS reports...")
+- Always be specific with dollar amounts and percentages
+- Compare their actual numbers to benchmarks
 
-When using web data, extract specific numbers from the snippets and cite the source.` : 'We have sufficient user data for all comparisons.'}
-
-Return JSON with: summary, peerComparison, rootCauses, actionPlan, encouragement.
-For peerComparison, prefer our user data. Use web data only when our data is null.`
+Return JSON with: summary, peerComparison, rootCauses, actionPlan, encouragement.`
         }
       ],
       temperature: 0.7,
