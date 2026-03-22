@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { CalculatorForm } from '@/components/calculator/CalculatorForm';
 import { CookedMeter } from '@/components/results/CookedMeter';
 import { AvatarPicker } from '@/components/avatar/AvatarPicker';
-import { LiveCounter } from '@/components/LiveCounter';
+
 import { calculateCookedScore, ColMap } from '@/lib/scoring';
 import { UserInputs, CookedResult } from '@/types/calculator';
 
@@ -186,7 +186,6 @@ export default function Home() {
               )}
 
               <div className="space-y-4">
-                <LiveCounter />
                 <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight">
                   are you financially
                   <br />
