@@ -6,8 +6,90 @@
  */
 
 import { UserInputs, FinancialMetrics, CookedResult } from '@/types/calculator';
+import { COST_OF_LIVING_INDEX } from '@/data/cities';
 import fs from 'fs';
 import path from 'path';
+
+// City-specific data for richer analysis
+const CITY_CONTEXT: Record<string, { 
+  avgRent1BR: number; 
+  avgSalary: number; 
+  tips: string[];
+  rentTrend: 'rising' | 'stable' | 'falling';
+}> = {
+  'New York, NY': { 
+    avgRent1BR: 3500, 
+    avgSalary: 85000, 
+    rentTrend: 'rising',
+    tips: ['Consider outer boroughs like Astoria or Washington Heights', 'Roommates are the norm here, not the exception', 'Your income needs to be 40x monthly rent for most landlords']
+  },
+  'San Francisco, CA': { 
+    avgRent1BR: 3200, 
+    avgSalary: 95000, 
+    rentTrend: 'stable',
+    tips: ['Oakland and East Bay offer 30-40% rent savings', 'Tech salaries here should be 20-30% higher than national average', 'Look into rent-controlled units']
+  },
+  'Los Angeles, CA': { 
+    avgRent1BR: 2500, 
+    avgSalary: 65000, 
+    rentTrend: 'rising',
+    tips: ['Living near work saves huge on gas/time', 'The Valley is cheaper than Westside', 'Car costs add $500-800/month here']
+  },
+  'Austin, TX': { 
+    avgRent1BR: 1800, 
+    avgSalary: 70000, 
+    rentTrend: 'rising',
+    tips: ['No state income tax = 5-10% effective raise', 'North Austin/Round Rock cheaper than downtown', 'Tech salaries competitive but COL rising fast']
+  },
+  'Miami, FL': { 
+    avgRent1BR: 2200, 
+    avgSalary: 55000, 
+    rentTrend: 'rising',
+    tips: ['No state income tax', 'Rent has spiked 30%+ since 2020', 'Consider Hialeah or Kendall for savings']
+  },
+  'Denver, CO': { 
+    avgRent1BR: 1900, 
+    avgSalary: 65000, 
+    rentTrend: 'stable',
+    tips: ['Aurora and Lakewood offer better value', 'Rent burden common issue here', 'Tech and healthcare pay well']
+  },
+  'Seattle, WA': { 
+    avgRent1BR: 2200, 
+    avgSalary: 85000, 
+    rentTrend: 'stable',
+    tips: ['No state income tax', 'South Seattle and Renton more affordable', 'Tech dominates - negotiate hard']
+  },
+  'Chicago, IL': { 
+    avgRent1BR: 1800, 
+    avgSalary: 60000, 
+    rentTrend: 'stable',
+    tips: ['Neighborhood choice matters hugely for rent', 'South and West sides much cheaper', 'Good transit means you can skip a car']
+  },
+  'Dallas, TX': { 
+    avgRent1BR: 1500, 
+    avgSalary: 60000, 
+    rentTrend: 'rising',
+    tips: ['No state income tax', 'Suburbs like Plano/Irving have good value', 'You need a car here']
+  },
+  'Atlanta, GA': { 
+    avgRent1BR: 1700, 
+    avgSalary: 58000, 
+    rentTrend: 'rising',
+    tips: ['OTP (Outside the Perimeter) is significantly cheaper', 'Traffic is brutal - live near work', 'Tech scene growing fast']
+  },
+  'Phoenix, AZ': { 
+    avgRent1BR: 1400, 
+    avgSalary: 55000, 
+    rentTrend: 'rising',
+    tips: ['Summer utilities can add $200-300/month', 'Tempe and Mesa offer good alternatives', 'One of the faster growing metros']
+  },
+  'Nashville, TN': { 
+    avgRent1BR: 1700, 
+    avgSalary: 55000, 
+    rentTrend: 'rising',
+    tips: ['No state income tax', 'East Nashville and suburbs growing', 'Healthcare is a major employer']
+  },
+};
 
 // Load the system prompt from markdown file
 const getSystemPrompt = () => {
@@ -27,6 +109,15 @@ interface AnalysisInput {
     age: number;
     city: string;
     industry: string;
+  };
+  cityContext: {
+    costOfLivingIndex: number;
+    avgRent1BR: number | null;
+    avgSalary: number | null;
+    rentTrend: string | null;
+    localTips: string[];
+    isHighCOL: boolean;
+    isLowCOL: boolean;
   };
   income: {
     annual: number;
@@ -136,11 +227,24 @@ export function prepareAnalysisInput(
   const estimatedMonthlyExpenses = inputs.monthlyRent + (monthlyIncome * 0.3);
   const emergencyMonths = inputs.totalSavings / estimatedMonthlyExpenses;
 
+  // Get city-specific context
+  const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
+  const cityData = CITY_CONTEXT[inputs.city];
+
   return {
     demographics: {
       age: inputs.age,
       city: inputs.city,
       industry: inputs.industry,
+    },
+    cityContext: {
+      costOfLivingIndex: colIndex,
+      avgRent1BR: cityData?.avgRent1BR || null,
+      avgSalary: cityData?.avgSalary || null,
+      rentTrend: cityData?.rentTrend || null,
+      localTips: cityData?.tips || [],
+      isHighCOL: colIndex >= 130,
+      isLowCOL: colIndex <= 85,
     },
     income: {
       annual: inputs.annualIncome,
