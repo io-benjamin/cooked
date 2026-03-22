@@ -161,7 +161,7 @@ INSTRUCTIONS:
 Return JSON with: summary, peerComparison, rootCauses, actionPlan, encouragement.`
         }
       ],
-      temperature: 0.7,
+      temperature: 0,
       max_tokens: 2048,
       response_format: { type: 'json_object' },
     }),
