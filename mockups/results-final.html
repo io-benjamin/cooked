@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Am I Cooked? — Your Results</title>
+  
+  <!-- Fonts -->
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Satoshi', 'sans-serif'],
+            body: ['General Sans', 'sans-serif'],
+          },
+          colors: {
+            surface: {
+              0: '#050505',
+              1: '#0a0a0a',
+              2: '#111111',
+              3: '#1a1a1a',
+            },
+            accent: {
+              DEFAULT: '#FF5C00',
+              light: '#FF7A00',
+              dark: '#E54D00',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'General Sans', sans-serif; }
+    .font-display { font-family: 'Satoshi', sans-serif; }
+    
+    body {
+      background: #050505;
+      color: #fff;
+    }
+    
+    /* Score gradient */
+    .score-text {
+      background: linear-gradient(135deg, #FF5C00 0%, #FF8A00 50%, #FFB347 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Subtle glow behind score */
+    .score-glow {
+      position: relative;
+    }
+    .score-glow::before {
+      content: '';
+      position: absolute;
+      inset: -20%;
+      background: radial-gradient(circle, rgba(255,92,0,0.15) 0%, transparent 70%);
+      z-index: -1;
+    }
+    
+    /* Card styles */
+    .card {
+      background: #0a0a0a;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.2s ease;
+    }
+    .card:hover {
+      border-color: rgba(255,255,255,0.1);
+    }
+    
+    .card-elevated {
+      background: #111111;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    
+    /* Progress bar */
+    .progress-track {
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, #FF5C00 0%, #FF7A00 100%);
+      box-shadow: 0 4px 20px rgba(255, 92, 0, 0.25);
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 30px rgba(255, 92, 0, 0.35);
+    }
+    
+    .btn-secondary {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.15);
+    }
+    
+    /* Tier indicator */
+    .tier-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #FF5C00;
+      box-shadow: 0 0 12px rgba(255, 92, 0, 0.5);
+    }
+    
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .animate-fade-up {
+      animation: fadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+    
+    .animate-count {
+      animation: countUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      opacity: 0;
+    }
+    
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+    .delay-6 { animation-delay: 0.6s; }
+    
+    /* Underline accent */
+    .underline-accent {
+      text-decoration: underline;
+      text-decoration-color: #FF5C00;
+      text-underline-offset: 4px;
+      text-decoration-thickness: 2px;
+    }
+    
+    /* Insight highlight */
+    .highlight {
+      color: #fff;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body class="antialiased min-h-screen">
+  
+  <main class="max-w-md mx-auto px-5 py-10">
+    
+    <!-- Status indicator -->
+    <div class="animate-fade-up delay-1 flex justify-center mb-10">
+      <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-2 border border-white/[0.06]">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+        <span class="text-xs text-white/50 font-medium">Analysis complete</span>
+      </div>
+    </div>
+    
+    <!-- Score Section -->
+    <div class="animate-count delay-2 text-center mb-6 score-glow">
+      <div class="font-display text-[140px] leading-none font-black score-text tracking-tight">
+        73
+      </div>
+    </div>
+    
+    <!-- Tier Badge -->
+    <div class="animate-fade-up delay-3 flex justify-center mb-10">
+      <div class="flex items-center gap-3 px-5 py-2.5 rounded-full bg-surface-2 border border-white/[0.06]">
+        <span class="tier-dot"></span>
+        <span class="font-display font-bold text-sm uppercase tracking-wider">Sautéed</span>
+      </div>
+    </div>
+    
+    <!-- Main Insight -->
+    <div class="animate-fade-up delay-3 text-center mb-10">
+      <h1 class="font-display text-2xl font-bold leading-tight mb-4">
+        Your rent is <span class="underline-accent">52%</span> of your income.
+      </h1>
+      <p class="text-white/40 text-base leading-relaxed">
+        That's the biggest thing cooking you. Most financial experts recommend keeping it under 30%.
+      </p>
+    </div>
+    
+    <!-- CTA Buttons -->
+    <div class="animate-fade-up delay-4 space-y-3 mb-12">
+      <button class="btn-primary w-full py-4 rounded-2xl font-display font-bold text-[15px]">
+        Unlock Full Analysis · $5
+      </button>
+      <button class="btn-secondary w-full py-3.5 rounded-2xl font-medium text-sm text-white/60 flex items-center justify-center gap-2.5">
+        <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Save your results
+      </button>
+    </div>
+    
+    <!-- Divider -->
+    <div class="border-t border-white/[0.06] mb-10"></div>
+    
+    <!-- Metrics Section -->
+    <div class="animate-fade-up delay-5 mb-10">
+      <h2 class="font-display font-bold text-xs uppercase tracking-widest text-white/30 mb-5">Your Breakdown</h2>
+      
+      <div class="space-y-4">
+        
+        <!-- Rent Burden -->
+        <div class="card rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="text-sm text-white/50">Rent Burden</span>
+              <span class="text-xs text-red-400 ml-2">Critical</span>
+            </div>
+            <span class="font-display font-bold text-xl text-red-400">52%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar bg-gradient-to-r from-red-500 to-red-400" style="width: 100%"></div>
+          </div>
+          <div class="flex justify-between mt-2.5">
+            <span class="text-xs text-white/30">Should be under 30%</span>
+            <span class="text-xs text-red-400/80">+22% over</span>
+          </div>
+        </div>
+        
+        <!-- DTI -->
+        <div class="card rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="text-sm text-white/50">Debt-to-Income</span>
+              <span class="text-xs text-yellow-400 ml-2">Warning</span>
+            </div>
+            <span class="font-display font-bold text-xl text-yellow-400">38%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar bg-gradient-to-r from-yellow-500 to-yellow-400" style="width: 76%"></div>
+          </div>
+          <div class="flex justify-between mt-2.5">
+            <span class="text-xs text-white/30">Should be under 35%</span>
+            <span class="text-xs text-yellow-400/80">+3% over</span>
+          </div>
+        </div>
+        
+        <!-- Savings Rate -->
+        <div class="card rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="text-sm text-white/50">Savings Rate</span>
+              <span class="text-xs text-green-400 ml-2">Okay</span>
+            </div>
+            <span class="font-display font-bold text-xl text-green-400">8%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar bg-gradient-to-r from-green-500 to-green-400" style="width: 40%"></div>
+          </div>
+          <div class="flex justify-between mt-2.5">
+            <span class="text-xs text-white/30">Target: 20%+</span>
+            <span class="text-xs text-white/40">12% to go</span>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Comparison Section -->
+    <div class="animate-fade-up delay-6 mb-10">
+      <h2 class="font-display font-bold text-xs uppercase tracking-widest text-white/30 mb-5">How You Compare</h2>
+      
+      <div class="card rounded-2xl p-5">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <div class="font-display font-bold text-base mb-0.5">Austin, TX</div>
+            <div class="text-xs text-white/30">1,203 submissions</div>
+          </div>
+          <div class="text-right">
+            <div class="font-display font-bold text-2xl">67%</div>
+            <div class="text-xs text-white/40">more cooked than</div>
+          </div>
+        </div>
+        
+        <!-- Bar comparison -->
+        <div class="flex gap-3">
+          <div class="flex-1">
+            <div class="h-20 flex items-end">
+              <div class="w-full bg-gradient-to-t from-accent to-accent-light rounded-t-lg" style="height: 73%"></div>
+            </div>
+            <div class="text-center mt-2">
+              <div class="font-display font-bold text-sm">73</div>
+              <div class="text-[10px] text-white/30 uppercase">You</div>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="h-20 flex items-end">
+              <div class="w-full bg-white/10 rounded-t-lg" style="height: 58%"></div>
+            </div>
+            <div class="text-center mt-2">
+              <div class="font-display font-bold text-sm text-white/50">58</div>
+              <div class="text-[10px] text-white/30 uppercase">Average</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Leaderboard Link -->
+    <div class="animate-fade-up delay-6 text-center">
+      <a href="#" class="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors group">
+        <span class="font-display font-medium">#847 on the leaderboard</span>
+        <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </a>
+    </div>
+    
+  </main>
+  
+  <!-- Footer -->
+  <footer class="py-8 border-t border-white/[0.04]">
+    <p class="text-center text-xs text-white/20">For entertainment purposes only. Not financial advice.</p>
+  </footer>
+  
+</body>
+</html>
