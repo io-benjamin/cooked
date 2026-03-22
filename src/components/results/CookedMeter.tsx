@@ -264,9 +264,6 @@ export function CookedMeter({ result }: CookedMeterProps) {
           </p>
         </div>
         
-        {/* Footer disclaimer */}
-        <p className="mt-8 text-[10px] text-white/15">For entertainment purposes only. Not financial advice.</p>
-        
       </div>
     </div>
   );
