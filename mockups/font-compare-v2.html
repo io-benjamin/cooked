@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Font Comparison v2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Lato:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Fontshare -->
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      background: #0A0A0A;
+      color: #fff;
+    }
+    
+    .card {
+      background: #111;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: all 0.3s ease;
+    }
+    .card:hover {
+      border-color: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+    
+    .score-gradient {
+      background: linear-gradient(135deg, #FF5C00 0%, #FF8A00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .tag {
+      background: rgba(255,92,0,0.15);
+      color: #FF5C00;
+      border: 1px solid rgba(255,92,0,0.3);
+    }
+    
+    /* Font families */
+    .combo-1-display { font-family: 'Poppins', sans-serif; }
+    .combo-1-body { font-family: 'Inter', sans-serif; }
+    
+    .combo-2-display { font-family: 'Space Grotesk', sans-serif; }
+    .combo-2-body { font-family: 'DM Sans', sans-serif; }
+    
+    .combo-3-display { font-family: 'Satoshi', sans-serif; }
+    .combo-3-body { font-family: 'General Sans', sans-serif; }
+    
+    .combo-4-display { font-family: 'Bebas Neue', sans-serif; }
+    .combo-4-body { font-family: 'Montserrat', sans-serif; }
+    
+    .combo-5-display { font-family: 'Playfair Display', serif; }
+    .combo-5-body { font-family: 'Lato', sans-serif; }
+  </style>
+</head>
+<body class="antialiased p-6 md:p-10">
+  
+  <header class="text-center mb-12">
+    <h1 class="text-2xl font-bold text-white/60 mb-2">Font Combinations</h1>
+    <p class="text-sm text-white/30">Pick the vibe that fits Am I Cooked?</p>
+  </header>
+  
+  <div class="grid lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
+    
+    <!-- COMBO 1: Inter + Poppins -->
+    <div class="card rounded-3xl p-8">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-xs text-white/30 uppercase tracking-widest mb-1">Combo 1</div>
+          <div class="combo-1-display font-semibold text-white/70">Inter + Poppins</div>
+        </div>
+        <span class="tag px-3 py-1 rounded-full text-xs font-medium">Startup</span>
+      </div>
+      
+      <div class="text-center mb-8">
+        <div class="combo-1-body text-[100px] leading-none font-extrabold score-gradient mb-3">73</div>
+        <div class="combo-1-body text-sm text-white/40 font-medium uppercase tracking-wide">percent cooked</div>
+      </div>
+      
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 mb-6 w-full justify-center">
+        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+        <span class="combo-1-display font-semibold text-sm">Sautéed</span>
+      </div>
+      
+      <h2 class="combo-1-display text-xl font-bold mb-3 text-center">Your rent is eating you alive.</h2>
+      <p class="combo-1-body text-white/50 text-sm leading-relaxed text-center mb-6">52% of your income goes to housing. That's 22% over the recommended limit.</p>
+      
+      <button class="combo-1-display w-full py-3.5 bg-orange-500 rounded-xl font-semibold text-sm hover:bg-orange-400 transition-colors">
+        Unlock Full Analysis · $5
+      </button>
+      
+      <p class="combo-1-body text-xs text-white/20 text-center mt-4">Clean + modern + startup energy</p>
+    </div>
+    
+    <!-- COMBO 2: Space Grotesk + DM Sans -->
+    <div class="card rounded-3xl p-8">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-xs text-white/30 uppercase tracking-widest mb-1">Combo 2</div>
+          <div class="combo-2-display font-semibold text-white/70">Space Grotesk + DM Sans</div>
+        </div>
+        <span class="tag px-3 py-1 rounded-full text-xs font-medium">Techy</span>
+      </div>
+      
+      <div class="text-center mb-8">
+        <div class="combo-2-display text-[100px] leading-none font-bold score-gradient mb-3">73</div>
+        <div class="combo-2-body text-sm text-white/40 font-medium uppercase tracking-wide">percent cooked</div>
+      </div>
+      
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 mb-6 w-full justify-center">
+        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+        <span class="combo-2-display font-semibold text-sm">Sautéed</span>
+      </div>
+      
+      <h2 class="combo-2-display text-xl font-bold mb-3 text-center">Your rent is eating you alive.</h2>
+      <p class="combo-2-body text-white/50 text-sm leading-relaxed text-center mb-6">52% of your income goes to housing. That's 22% over the recommended limit.</p>
+      
+      <button class="combo-2-display w-full py-3.5 bg-orange-500 rounded-xl font-semibold text-sm hover:bg-orange-400 transition-colors">
+        Unlock Full Analysis · $5
+      </button>
+      
+      <p class="combo-2-body text-xs text-white/20 text-center mt-4">Techy + futuristic + premium</p>
+    </div>
+    
+    <!-- COMBO 3: Satoshi + General Sans -->
+    <div class="card rounded-3xl p-8">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-xs text-white/30 uppercase tracking-widest mb-1">Combo 3</div>
+          <div class="combo-3-display font-bold text-white/70">Satoshi + General Sans</div>
+        </div>
+        <span class="tag px-3 py-1 rounded-full text-xs font-medium">Luxury</span>
+      </div>
+      
+      <div class="text-center mb-8">
+        <div class="combo-3-display text-[100px] leading-none font-black score-gradient mb-3">73</div>
+        <div class="combo-3-body text-sm text-white/40 font-medium uppercase tracking-wide">percent cooked</div>
+      </div>
+      
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 mb-6 w-full justify-center">
+        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+        <span class="combo-3-display font-bold text-sm">Sautéed</span>
+      </div>
+      
+      <h2 class="combo-3-display text-xl font-bold mb-3 text-center">Your rent is eating you alive.</h2>
+      <p class="combo-3-body text-white/50 text-sm leading-relaxed text-center mb-6">52% of your income goes to housing. That's 22% over the recommended limit.</p>
+      
+      <button class="combo-3-display w-full py-3.5 bg-orange-500 rounded-xl font-bold text-sm hover:bg-orange-400 transition-colors">
+        Unlock Full Analysis · $5
+      </button>
+      
+      <p class="combo-3-body text-xs text-white/20 text-center mt-4">Luxury startup / Apple-level clean</p>
+    </div>
+    
+    <!-- COMBO 4: Bebas Neue + Montserrat -->
+    <div class="card rounded-3xl p-8">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-xs text-white/30 uppercase tracking-widest mb-1">Combo 4</div>
+          <div class="combo-4-body font-semibold text-white/70">Bebas Neue + Montserrat</div>
+        </div>
+        <span class="tag px-3 py-1 rounded-full text-xs font-medium">Bold</span>
+      </div>
+      
+      <div class="text-center mb-8">
+        <div class="combo-4-display text-[120px] leading-none score-gradient mb-3" style="letter-spacing: 0.02em;">73</div>
+        <div class="combo-4-body text-sm text-white/40 font-medium uppercase tracking-wide">percent cooked</div>
+      </div>
+      
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 mb-6 w-full justify-center">
+        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+        <span class="combo-4-display text-lg tracking-wide">SAUTÉED</span>
+      </div>
+      
+      <h2 class="combo-4-display text-2xl mb-3 text-center tracking-wide">YOUR RENT IS EATING YOU ALIVE.</h2>
+      <p class="combo-4-body text-white/50 text-sm leading-relaxed text-center mb-6">52% of your income goes to housing. That's 22% over the recommended limit.</p>
+      
+      <button class="combo-4-display w-full py-3.5 bg-orange-500 rounded-xl text-lg tracking-wide hover:bg-orange-400 transition-colors">
+        UNLOCK FULL ANALYSIS · $5
+      </button>
+      
+      <p class="combo-4-body text-xs text-white/20 text-center mt-4">Bold + high-impact + attention-grabbing</p>
+    </div>
+    
+    <!-- COMBO 5: Playfair Display + Lato -->
+    <div class="card rounded-3xl p-8">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-xs text-white/30 uppercase tracking-widest mb-1">Combo 5</div>
+          <div class="combo-5-display font-semibold text-white/70">Playfair Display + Lato</div>
+        </div>
+        <span class="tag px-3 py-1 rounded-full text-xs font-medium">Elegant</span>
+      </div>
+      
+      <div class="text-center mb-8">
+        <div class="combo-5-display text-[100px] leading-none font-bold score-gradient mb-3" style="font-style: normal;">73</div>
+        <div class="combo-5-body text-sm text-white/40 font-bold uppercase tracking-wide">percent cooked</div>
+      </div>
+      
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 mb-6 w-full justify-center">
+        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+        <span class="combo-5-display font-semibold text-sm italic">Sautéed</span>
+      </div>
+      
+      <h2 class="combo-5-display text-xl font-bold mb-3 text-center">Your rent is eating you alive.</h2>
+      <p class="combo-5-body text-white/50 text-sm leading-relaxed text-center mb-6">52% of your income goes to housing. That's 22% over the recommended limit.</p>
+      
+      <button class="combo-5-body w-full py-3.5 bg-orange-500 rounded-xl font-bold text-sm hover:bg-orange-400 transition-colors">
+        Unlock Full Analysis · $5
+      </button>
+      
+      <p class="combo-5-body text-xs text-white/20 text-center mt-4">Elegant + emotional + storytelling</p>
+    </div>
+    
+    <!-- MY PICK -->
+    <div class="card rounded-3xl p-8 border-orange-500/30">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-xs text-orange-400 uppercase tracking-widest mb-1">My Pick for You</div>
+          <div class="combo-3-display font-bold text-white/70">Combo 3: Satoshi + General Sans</div>
+        </div>
+        <span class="bg-orange-500 px-3 py-1 rounded-full text-xs font-medium text-white">Recommended</span>
+      </div>
+      
+      <div class="combo-3-body text-sm text-white/50 leading-relaxed">
+        <p class="mb-3"><strong class="text-white/70">Why:</strong></p>
+        <ul class="space-y-2 text-white/40">
+          <li>✓ Feels premium & trustworthy (reputable)</li>
+          <li>✓ Bold enough to stand out</li>
+          <li>✓ Clean enough to be taken seriously</li>
+          <li>✓ Numbers look great in Satoshi</li>
+          <li>✓ Body text is super readable</li>
+        </ul>
+        <p class="mt-4 text-white/50">Perfect balance of <span class="text-orange-400">playful + professional</span></p>
+      </div>
+    </div>
+    
+  </div>
+  
+  <footer class="text-center mt-12">
+    <p class="text-white/30 text-sm">Pick 1-5 and I'll build the full results page with it</p>
+  </footer>
+  
+</body>
+</html>
