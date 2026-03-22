@@ -1,101 +1,13 @@
 /**
  * AI Financial Analysis Module
  * Uses Groq API (fast, cheap, OpenAI-compatible)
- * 
- * Get your free API key at: https://console.groq.com
+ * All comparison data comes from our actual user submissions
  */
 
 import { UserInputs, FinancialMetrics, CookedResult } from '@/types/calculator';
 import { COST_OF_LIVING_INDEX } from '@/data/cities';
-import { 
-  NATIONAL_BENCHMARKS, 
-  CITY_MARKET_DATA, 
-  INDUSTRY_BENCHMARKS, 
-  normalizeIndustry 
-} from '@/data/market-data';
 import fs from 'fs';
 import path from 'path';
-
-// City-specific data for richer analysis
-const CITY_CONTEXT: Record<string, { 
-  avgRent1BR: number; 
-  avgSalary: number; 
-  tips: string[];
-  rentTrend: 'rising' | 'stable' | 'falling';
-}> = {
-  'New York, NY': { 
-    avgRent1BR: 3500, 
-    avgSalary: 85000, 
-    rentTrend: 'rising',
-    tips: ['Consider outer boroughs like Astoria or Washington Heights', 'Roommates are the norm here, not the exception', 'Your income needs to be 40x monthly rent for most landlords']
-  },
-  'San Francisco, CA': { 
-    avgRent1BR: 3200, 
-    avgSalary: 95000, 
-    rentTrend: 'stable',
-    tips: ['Oakland and East Bay offer 30-40% rent savings', 'Tech salaries here should be 20-30% higher than national average', 'Look into rent-controlled units']
-  },
-  'Los Angeles, CA': { 
-    avgRent1BR: 2500, 
-    avgSalary: 65000, 
-    rentTrend: 'rising',
-    tips: ['Living near work saves huge on gas/time', 'The Valley is cheaper than Westside', 'Car costs add $500-800/month here']
-  },
-  'Austin, TX': { 
-    avgRent1BR: 1800, 
-    avgSalary: 70000, 
-    rentTrend: 'rising',
-    tips: ['No state income tax = 5-10% effective raise', 'North Austin/Round Rock cheaper than downtown', 'Tech salaries competitive but COL rising fast']
-  },
-  'Miami, FL': { 
-    avgRent1BR: 2200, 
-    avgSalary: 55000, 
-    rentTrend: 'rising',
-    tips: ['No state income tax', 'Rent has spiked 30%+ since 2020', 'Consider Hialeah or Kendall for savings']
-  },
-  'Denver, CO': { 
-    avgRent1BR: 1900, 
-    avgSalary: 65000, 
-    rentTrend: 'stable',
-    tips: ['Aurora and Lakewood offer better value', 'Rent burden common issue here', 'Tech and healthcare pay well']
-  },
-  'Seattle, WA': { 
-    avgRent1BR: 2200, 
-    avgSalary: 85000, 
-    rentTrend: 'stable',
-    tips: ['No state income tax', 'South Seattle and Renton more affordable', 'Tech dominates - negotiate hard']
-  },
-  'Chicago, IL': { 
-    avgRent1BR: 1800, 
-    avgSalary: 60000, 
-    rentTrend: 'stable',
-    tips: ['Neighborhood choice matters hugely for rent', 'South and West sides much cheaper', 'Good transit means you can skip a car']
-  },
-  'Dallas, TX': { 
-    avgRent1BR: 1500, 
-    avgSalary: 60000, 
-    rentTrend: 'rising',
-    tips: ['No state income tax', 'Suburbs like Plano/Irving have good value', 'You need a car here']
-  },
-  'Atlanta, GA': { 
-    avgRent1BR: 1700, 
-    avgSalary: 58000, 
-    rentTrend: 'rising',
-    tips: ['OTP (Outside the Perimeter) is significantly cheaper', 'Traffic is brutal - live near work', 'Tech scene growing fast']
-  },
-  'Phoenix, AZ': { 
-    avgRent1BR: 1400, 
-    avgSalary: 55000, 
-    rentTrend: 'rising',
-    tips: ['Summer utilities can add $200-300/month', 'Tempe and Mesa offer good alternatives', 'One of the faster growing metros']
-  },
-  'Nashville, TN': { 
-    avgRent1BR: 1700, 
-    avgSalary: 55000, 
-    rentTrend: 'rising',
-    tips: ['No state income tax', 'East Nashville and suburbs growing', 'Healthcare is a major employer']
-  },
-};
 
 // Load the system prompt from markdown file
 const getSystemPrompt = () => {
@@ -106,47 +18,86 @@ const getSystemPrompt = () => {
     );
   } catch {
     // Fallback for edge runtime or if file not found
-    return `You are a direct, no-BS financial advisor. Analyze the user's financial data and provide structured JSON output with: summary, rootCauses, detectedHabits, peerComparison, actionPlan, targets, and encouragement. Be brutally honest but helpful. Use their actual numbers - specific dollar amounts and percentages. This is for entertainment purposes only, not real financial advice.`;
+    return `You are a direct, no-BS financial advisor. Analyze the user's financial data and provide structured JSON output. Be brutally honest but helpful. Use their actual numbers and compare to peer data. This is for entertainment purposes only.`;
   }
 };
 
-// Peer comparison data from our actual user submissions
+// Aggregated stats from our database
+interface AggregatedStats {
+  count: number;
+  avgScore: number;
+  avgRentBurden: number;
+  avgDti: number;
+  avgSavingsRate: number;
+  avgNetWorth: number;
+  medianNetWorth: number;
+  avgIncome: number | null;
+  medianIncome: number | null;
+  avgRent: number | null;
+  avgSavings: number | null;
+  avgDebt: number | null;
+  avgRetirement: number | null;
+  scoreDistribution: {
+    raw: number;
+    lightSizzle: number;
+    simmering: number;
+    sauteed: number;
+    wellDone: number;
+    charred: number;
+  };
+}
+
+interface CityStats extends AggregatedStats {
+  name: string;
+}
+
+interface AgeGroupStats extends AggregatedStats {
+  range: string;
+}
+
+interface IndustryStats extends AggregatedStats {
+  name: string;
+}
+
+interface TopCity {
+  name: string;
+  count: number;
+  avgScore: number;
+  avgIncome: number | null;
+  avgRent: number | null;
+}
+
+interface TopIndustry {
+  name: string;
+  count: number;
+  avgScore: number;
+  avgIncome: number | null;
+}
+
+interface AgeGroupBreakdown {
+  label: string;
+  min: number;
+  max: number;
+  count: number;
+  stats: {
+    avgScore: number;
+    avgNetWorth: number;
+    avgIncome: number | null;
+  } | null;
+}
+
+// All peer data from our submissions database
 interface PeerData {
-  city: {
-    avgScore: number;
-    avgRentBurden: number;
-    avgDti: number;
-    avgSavingsRate: number;
-    avgNetWorth: number;
-    count: number;
-  } | null;
-  ageGroup: {
-    avgScore: number;
-    avgRentBurden: number;
-    avgDti: number;
-    avgSavingsRate: number;
-    avgNetWorth: number;
-    count: number;
-    range: string;
-  } | null;
-  industry: {
-    avgScore: number;
-    avgRentBurden: number;
-    avgDti: number;
-    avgSavingsRate: number;
-    avgNetWorth: number;
-    count: number;
-  } | null;
-  overall: {
-    avgScore: number;
-    avgRentBurden: number;
-    avgDti: number;
-    avgSavingsRate: number;
-    avgNetWorth: number;
-    count: number;
-  } | null;
-  percentile: number | null;
   totalUsers: number;
+  overall: AggregatedStats | null;
+  city: CityStats | null;
+  ageGroup: AgeGroupStats | null;
+  industry: IndustryStats | null;
+  percentile: number | null;
+  rank: number | null;
+  topCities: TopCity[];
+  topIndustries: TopIndustry[];
+  ageGroupBreakdown: AgeGroupBreakdown[];
 }
 
 interface AnalysisInput {
@@ -157,39 +108,10 @@ interface AnalysisInput {
   };
   cityContext: {
     costOfLivingIndex: number;
-    avgRent1BR: number | null;
-    avgSalary: number | null;
-    rentTrend: string | null;
-    localTips: string[];
     isHighCOL: boolean;
     isLowCOL: boolean;
   };
-  peerComparison: PeerData;
-  marketData: {
-    national: {
-      medianHouseholdIncome: number;
-      medianRent1BR: number;
-      avgSavingsRate: number;
-      avgNetWorthForAge: number | null;
-      avg401kForAge: number | null;
-    };
-    city: {
-      medianIncome: number;
-      medianRent1BR: number;
-      medianRent2BR: number;
-      medianHomePrice: number;
-      rentBurdenedPercent: number;
-      topEmployers: string[];
-      growingIndustries: string[];
-    } | null;
-    industry: {
-      medianSalary: number;
-      entryLevelSalary: number;
-      seniorSalary: number;
-      growthOutlook: string;
-      hotSkills: string[];
-    } | null;
-  };
+  peerData: PeerData;
   income: {
     annual: number;
     monthly: number;
@@ -242,14 +164,24 @@ export interface AIAnalysisResult {
     consequence: string;
   }>;
   peerComparison: {
+    vsCity: {
+      summary: string;
+      details: string[];
+    };
     vsAgeGroup: {
-      rentBurden: string;
-      savings: string;
-      debt: string;
+      summary: string;
+      details: string[];
+    };
+    vsIndustry: {
+      summary: string;
+      details: string[];
+    };
+    vsOverall: {
+      percentile: number;
+      rank: number;
+      totalUsers: number;
       summary: string;
     };
-    vsCity: { summary: string };
-    vsIndustry: { summary: string };
   };
   actionPlan: {
     immediate: {
@@ -281,9 +213,9 @@ export interface AIAnalysisResult {
 }
 
 /**
- * Fetch real peer comparison data from our submissions database
+ * Fetch aggregated peer data from our submissions database
  */
-export async function fetchPeerData(
+async function fetchPeerData(
   city: string,
   industry: string,
   age: number,
@@ -291,7 +223,7 @@ export async function fetchPeerData(
   baseUrl?: string
 ): Promise<PeerData> {
   try {
-    const url = new URL('/api/stats', baseUrl || 'http://localhost:3000');
+    const url = new URL('/api/aggregations', baseUrl || 'http://localhost:3000');
     url.searchParams.set('city', city);
     url.searchParams.set('industry', industry);
     url.searchParams.set('age', String(age));
@@ -300,58 +232,35 @@ export async function fetchPeerData(
     const res = await fetch(url.toString());
     if (!res.ok) {
       console.error('Failed to fetch peer data:', res.status);
-      return { city: null, ageGroup: null, industry: null, overall: null, percentile: null, totalUsers: 0 };
+      return getEmptyPeerData();
     }
     
-    const data = await res.json();
-    
-    return {
-      city: data.city ? {
-        avgScore: data.city.avgScore,
-        avgRentBurden: data.city.avgRentBurden,
-        avgDti: data.city.avgDti,
-        avgSavingsRate: data.city.avgSavingsRate,
-        avgNetWorth: data.city.avgNetWorth,
-        count: data.city.count,
-      } : null,
-      ageGroup: data.ageGroup ? {
-        avgScore: data.ageGroup.avgScore,
-        avgRentBurden: data.ageGroup.avgRentBurden,
-        avgDti: data.ageGroup.avgDti,
-        avgSavingsRate: data.ageGroup.avgSavingsRate,
-        avgNetWorth: data.ageGroup.avgNetWorth,
-        count: data.ageGroup.count,
-        range: data.ageGroup.range,
-      } : null,
-      industry: data.industry ? {
-        avgScore: data.industry.avgScore,
-        avgRentBurden: data.industry.avgRentBurden,
-        avgDti: data.industry.avgDti,
-        avgSavingsRate: data.industry.avgSavingsRate,
-        avgNetWorth: data.industry.avgNetWorth,
-        count: data.industry.count,
-      } : null,
-      overall: data.overall ? {
-        avgScore: data.overall.avgScore,
-        avgRentBurden: data.overall.avgRentBurden,
-        avgDti: data.overall.avgDti,
-        avgSavingsRate: data.overall.avgSavingsRate,
-        avgNetWorth: data.overall.avgNetWorth,
-        count: data.overall.count,
-      } : null,
-      percentile: data.percentile,
-      totalUsers: data.totalUsers || 0,
-    };
+    return await res.json();
   } catch (error) {
     console.error('Error fetching peer data:', error);
-    return { city: null, ageGroup: null, industry: null, overall: null, percentile: null, totalUsers: 0 };
+    return getEmptyPeerData();
   }
+}
+
+function getEmptyPeerData(): PeerData {
+  return {
+    totalUsers: 0,
+    overall: null,
+    city: null,
+    ageGroup: null,
+    industry: null,
+    percentile: null,
+    rank: null,
+    topCities: [],
+    topIndustries: [],
+    ageGroupBreakdown: [],
+  };
 }
 
 /**
  * Prepare user inputs for AI analysis
  */
-export async function prepareAnalysisInput(
+async function prepareAnalysisInput(
   inputs: UserInputs,
   metrics: FinancialMetrics,
   score: number,
@@ -367,23 +276,11 @@ export async function prepareAnalysisInput(
   const estimatedMonthlyExpenses = inputs.monthlyRent + (monthlyIncome * 0.3);
   const emergencyMonths = inputs.totalSavings / estimatedMonthlyExpenses;
 
-  // Get city-specific context
+  // Get city cost of living context
   const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
-  const cityData = CITY_CONTEXT[inputs.city];
 
-  // Fetch real peer comparison data from our database
+  // Fetch real peer data from our database
   const peerData = await fetchPeerData(inputs.city, inputs.industry, inputs.age, score, baseUrl);
-
-  // Get real market data
-  const cityMarketData = CITY_MARKET_DATA[inputs.city] || null;
-  const normalizedIndustry = normalizeIndustry(inputs.industry);
-  const industryData = normalizedIndustry ? INDUSTRY_BENCHMARKS[normalizedIndustry] : null;
-  
-  // Get age-appropriate benchmarks
-  const ageKey = inputs.age < 25 ? 'under25' : 
-                 inputs.age < 35 ? '25-34' :
-                 inputs.age < 45 ? '35-44' :
-                 inputs.age < 55 ? '45-54' : '55-64';
 
   return {
     demographics: {
@@ -393,39 +290,10 @@ export async function prepareAnalysisInput(
     },
     cityContext: {
       costOfLivingIndex: colIndex,
-      avgRent1BR: cityData?.avgRent1BR || null,
-      avgSalary: cityData?.avgSalary || null,
-      rentTrend: cityData?.rentTrend || null,
-      localTips: cityData?.tips || [],
       isHighCOL: colIndex >= 130,
       isLowCOL: colIndex <= 85,
     },
-    peerComparison: peerData,
-    marketData: {
-      national: {
-        medianHouseholdIncome: NATIONAL_BENCHMARKS.medianHouseholdIncome,
-        medianRent1BR: NATIONAL_BENCHMARKS.medianRent1BR,
-        avgSavingsRate: NATIONAL_BENCHMARKS.avgSavingsRate,
-        avgNetWorthForAge: NATIONAL_BENCHMARKS.avgNetWorthByAge[ageKey as keyof typeof NATIONAL_BENCHMARKS.avgNetWorthByAge] || null,
-        avg401kForAge: NATIONAL_BENCHMARKS.avg401kBalance[ageKey as keyof typeof NATIONAL_BENCHMARKS.avg401kBalance] || null,
-      },
-      city: cityMarketData ? {
-        medianIncome: cityMarketData.medianIncome,
-        medianRent1BR: cityMarketData.medianRent1BR,
-        medianRent2BR: cityMarketData.medianRent2BR,
-        medianHomePrice: cityMarketData.medianHomePrice,
-        rentBurdenedPercent: cityMarketData.rentBurdenedPercent,
-        topEmployers: cityMarketData.topEmployers,
-        growingIndustries: cityMarketData.growingIndustries,
-      } : null,
-      industry: industryData ? {
-        medianSalary: industryData.medianSalary,
-        entryLevelSalary: industryData.entryLevelSalary,
-        seniorSalary: industryData.seniorSalary,
-        growthOutlook: industryData.growthOutlook,
-        hotSkills: industryData.hotSkills,
-      } : null,
-    },
+    peerData,
     income: {
       annual: inputs.annualIncome,
       monthly: Math.round(monthlyIncome),
@@ -464,7 +332,6 @@ export async function prepareAnalysisInput(
 
 /**
  * Call Groq API for analysis
- * Uses llama-3.1-8b-instant (fast) or llama-3.3-70b-versatile (better quality)
  */
 export async function analyzeWithGroq(
   input: AnalysisInput,
@@ -483,7 +350,9 @@ export async function analyzeWithGroq(
 INPUT DATA:
 ${JSON.stringify(input, null, 2)}
 
-Respond ONLY with valid JSON matching the structure in your instructions. No markdown code blocks, no explanation, just the raw JSON object starting with { and ending with }.`;
+IMPORTANT: All peer comparison data in "peerData" comes from REAL users who have taken this assessment. Use these actual numbers, not generic statistics.
+
+Respond ONLY with valid JSON matching the structure in your instructions. No markdown code blocks, just raw JSON.`;
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -499,7 +368,7 @@ Respond ONLY with valid JSON matching the structure in your instructions. No mar
       ],
       temperature: 0.7,
       max_tokens: 4096,
-      response_format: { type: 'json_object' }, // Force JSON output
+      response_format: { type: 'json_object' },
     }),
   });
 
@@ -510,27 +379,17 @@ Respond ONLY with valid JSON matching the structure in your instructions. No mar
   }
 
   const data = await response.json();
-  
-  // Extract the content from the response
   const content = data.choices?.[0]?.message?.content;
   
   if (!content) {
     throw new Error('No content in Groq response');
   }
 
-  // Parse the JSON response
   try {
-    // Clean up response - sometimes models wrap in markdown despite instructions
     let jsonStr = content.trim();
-    if (jsonStr.startsWith('```json')) {
-      jsonStr = jsonStr.slice(7);
-    }
-    if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.slice(3);
-    }
-    if (jsonStr.endsWith('```')) {
-      jsonStr = jsonStr.slice(0, -3);
-    }
+    if (jsonStr.startsWith('```json')) jsonStr = jsonStr.slice(7);
+    if (jsonStr.startsWith('```')) jsonStr = jsonStr.slice(3);
+    if (jsonStr.endsWith('```')) jsonStr = jsonStr.slice(0, -3);
     
     return JSON.parse(jsonStr.trim());
   } catch (e) {
@@ -555,7 +414,5 @@ export async function getAIAnalysis(
     baseUrl
   );
   
-  // Use Groq with llama-3.1-8b-instant (fast & cheap)
-  // Alternative: 'llama-3.3-70b-versatile' for better quality
   return analyzeWithGroq(analysisInput, 'llama-3.1-8b-instant');
 }
