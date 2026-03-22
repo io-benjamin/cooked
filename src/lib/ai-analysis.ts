@@ -1,15 +1,14 @@
 /**
  * AI Financial Analysis Module
- * Uses Groq API (fast, cheap, OpenAI-compatible)
- * All comparison data comes from our actual user submissions
+ * All comparison data comes from dynamic DB queries - no hardcoded values
  */
 
 import { UserInputs, FinancialMetrics, CookedResult } from '@/types/calculator';
-import { COST_OF_LIVING_INDEX } from '@/data/cities';
+import { getAllPeerData } from './peer-queries';
 import fs from 'fs';
 import path from 'path';
 
-// Load the system prompt from markdown file
+// Load the system prompt
 const getSystemPrompt = () => {
   try {
     return fs.readFileSync(
@@ -17,342 +16,125 @@ const getSystemPrompt = () => {
       'utf-8'
     );
   } catch {
-    // Fallback for edge runtime or if file not found
-    return `You are a direct, no-BS financial advisor. Analyze the user's financial data and provide structured JSON output. Be brutally honest but helpful. Use their actual numbers and compare to peer data. This is for entertainment purposes only.`;
+    return `You are a direct financial advisor. Analyze the user's data and compare to peer data from our database. Be specific with numbers. Output JSON.`;
   }
 };
-
-// Aggregated stats from our database
-interface AggregatedStats {
-  count: number;
-  avgScore: number;
-  avgRentBurden: number;
-  avgDti: number;
-  avgSavingsRate: number;
-  avgNetWorth: number;
-  medianNetWorth: number;
-  avgIncome: number | null;
-  medianIncome: number | null;
-  avgRent: number | null;
-  avgSavings: number | null;
-  avgDebt: number | null;
-  avgRetirement: number | null;
-  scoreDistribution: {
-    raw: number;
-    lightSizzle: number;
-    simmering: number;
-    sauteed: number;
-    wellDone: number;
-    charred: number;
-  };
-}
-
-interface CityStats extends AggregatedStats {
-  name: string;
-}
-
-interface AgeGroupStats extends AggregatedStats {
-  range: string;
-}
-
-interface IndustryStats extends AggregatedStats {
-  name: string;
-}
-
-interface TopCity {
-  name: string;
-  count: number;
-  avgScore: number;
-  avgIncome: number | null;
-  avgRent: number | null;
-}
-
-interface TopIndustry {
-  name: string;
-  count: number;
-  avgScore: number;
-  avgIncome: number | null;
-}
-
-interface AgeGroupBreakdown {
-  label: string;
-  min: number;
-  max: number;
-  count: number;
-  stats: {
-    avgScore: number;
-    avgNetWorth: number;
-    avgIncome: number | null;
-  } | null;
-}
-
-// All peer data from our submissions database
-interface PeerData {
-  totalUsers: number;
-  overall: AggregatedStats | null;
-  city: CityStats | null;
-  ageGroup: AgeGroupStats | null;
-  industry: IndustryStats | null;
-  percentile: number | null;
-  rank: number | null;
-  topCities: TopCity[];
-  topIndustries: TopIndustry[];
-  ageGroupBreakdown: AgeGroupBreakdown[];
-}
-
-interface AnalysisInput {
-  demographics: {
-    age: number;
-    city: string;
-    industry: string;
-  };
-  cityContext: {
-    costOfLivingIndex: number;
-    isHighCOL: boolean;
-    isLowCOL: boolean;
-  };
-  peerData: PeerData;
-  income: {
-    annual: number;
-    monthly: number;
-    side: number;
-    partner: number;
-    total: number;
-  };
-  housing: {
-    monthlyRent: number;
-    livingArrangement: string;
-  };
-  debt: {
-    studentLoans: number;
-    creditCard: number;
-    carLoan: number;
-    other: number;
-    total: number;
-  };
-  savings: {
-    emergency: number;
-    retirement: number;
-    investments: number;
-    crypto: number;
-    brokerage: number;
-    total: number;
-  };
-  creditScore?: number;
-  calculatedMetrics: FinancialMetrics & {
-    score: number;
-    tier: string;
-    emergencyMonths: number;
-  };
-}
 
 export interface AIAnalysisResult {
   summary: {
     oneLiner: string;
-    cookLevel: string;
     biggestProblem: string;
+  };
+  peerComparison: {
+    vsCity: string;
+    vsAgeGroup: string;
+    vsIndustry: string;
+    vsOverall: string;
   };
   rootCauses: Array<{
     issue: string;
     explanation: string;
-    impact: string;
     severity: 'critical' | 'high' | 'medium' | 'low';
   }>;
-  detectedHabits: Array<{
-    habit: string;
-    evidence: string;
-    consequence: string;
-  }>;
-  peerComparison: {
-    vsCity: {
-      summary: string;
-      details: string[];
-    };
-    vsAgeGroup: {
-      summary: string;
-      details: string[];
-    };
-    vsIndustry: {
-      summary: string;
-      details: string[];
-    };
-    vsOverall: {
-      percentile: number;
-      rank: number;
-      totalUsers: number;
-      summary: string;
-    };
-  };
   actionPlan: {
-    immediate: {
-      title: string;
-      action: string;
-      impact: string;
-    };
-    thirtyDays: Array<{
-      priority: number;
-      action: string;
-      target: string;
-      why: string;
-    }>;
-    ninetyDays: Array<{
-      milestone: string;
-      metrics: string;
-    }>;
+    immediate: string;
+    thirtyDays: string[];
+    ninetyDays: string[];
   };
-  targets: {
-    rentBurden: { current: number; target: number; action: string };
-    emergencyFund: { current: number; target: number; monthlyContribution: string };
-    debtPayoff: { current: number; priority: string; monthlyPayment: string };
-  };
-  encouragement: {
-    doingRight: string[];
-    quickWins: string[];
-    motivation: string;
-  };
+  encouragement: string[];
 }
 
 /**
- * Fetch aggregated peer data from our submissions database
+ * Main analysis function
  */
-async function fetchPeerData(
-  city: string,
-  industry: string,
-  age: number,
-  score: number,
-  baseUrl?: string
-): Promise<PeerData> {
-  try {
-    const url = new URL('/api/aggregations', baseUrl || 'http://localhost:3000');
-    url.searchParams.set('city', city);
-    url.searchParams.set('industry', industry);
-    url.searchParams.set('age', String(age));
-    url.searchParams.set('score', String(score));
-    
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      console.error('Failed to fetch peer data:', res.status);
-      return getEmptyPeerData();
-    }
-    
-    return await res.json();
-  } catch (error) {
-    console.error('Error fetching peer data:', error);
-    return getEmptyPeerData();
-  }
-}
-
-function getEmptyPeerData(): PeerData {
-  return {
-    totalUsers: 0,
-    overall: null,
-    city: null,
-    ageGroup: null,
-    industry: null,
-    percentile: null,
-    rank: null,
-    topCities: [],
-    topIndustries: [],
-    ageGroupBreakdown: [],
-  };
-}
-
-/**
- * Prepare user inputs for AI analysis
- */
-async function prepareAnalysisInput(
+export async function getAIAnalysis(
   inputs: UserInputs,
-  metrics: FinancialMetrics,
-  score: number,
-  tier: string,
-  baseUrl?: string
-): Promise<AnalysisInput> {
-  const totalIncome = inputs.annualIncome + (inputs.partnerIncome || 0) + (inputs.sideIncome || 0);
-  const monthlyIncome = totalIncome / 12;
-  const totalDebt = inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0);
-  const totalSavings = inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0) + (inputs.crypto || 0) + (inputs.brokerage || 0);
+  result: CookedResult
+): Promise<AIAnalysisResult> {
   
-  // Estimate monthly expenses for emergency fund calculation
-  const estimatedMonthlyExpenses = inputs.monthlyRent + (monthlyIncome * 0.3);
-  const emergencyMonths = inputs.totalSavings / estimatedMonthlyExpenses;
-
-  // Get city cost of living context
-  const colIndex = COST_OF_LIVING_INDEX[inputs.city] || 100;
-
-  // Fetch real peer data from our database
-  const peerData = await fetchPeerData(inputs.city, inputs.industry, inputs.age, score, baseUrl);
-
-  return {
-    demographics: {
+  // Query DB for peer comparisons based on user's actual city/age/industry
+  const peerData = await getAllPeerData(
+    inputs.city,
+    inputs.age,
+    inputs.industry,
+    result.score
+  );
+  
+  // Build the input for AI
+  const analysisInput = {
+    user: {
       age: inputs.age,
       city: inputs.city,
       industry: inputs.industry,
+      income: inputs.annualIncome,
+      rent: inputs.monthlyRent,
+      score: result.score,
+      tier: result.tier,
+      rentBurden: result.metrics.rentBurden,
+      dti: result.metrics.dti,
+      savingsRate: result.metrics.savingsRate,
+      netWorth: result.metrics.netWorth,
+      debt: {
+        studentLoans: inputs.studentLoans,
+        creditCard: inputs.creditCardDebt,
+        carLoan: inputs.carLoan,
+        total: inputs.studentLoans + inputs.creditCardDebt + inputs.carLoan + (inputs.otherDebt || 0),
+      },
+      savings: {
+        emergency: inputs.totalSavings,
+        retirement: inputs.retirementSavings,
+        total: inputs.totalSavings + inputs.retirementSavings + (inputs.investments || 0),
+      },
     },
-    cityContext: {
-      costOfLivingIndex: colIndex,
-      isHighCOL: colIndex >= 130,
-      isLowCOL: colIndex <= 85,
-    },
-    peerData,
-    income: {
-      annual: inputs.annualIncome,
-      monthly: Math.round(monthlyIncome),
-      side: inputs.sideIncome || 0,
-      partner: inputs.partnerIncome || 0,
-      total: totalIncome,
-    },
-    housing: {
-      monthlyRent: inputs.monthlyRent,
-      livingArrangement: inputs.livingArrangement,
-    },
-    debt: {
-      studentLoans: inputs.studentLoans,
-      creditCard: inputs.creditCardDebt,
-      carLoan: inputs.carLoan,
-      other: inputs.otherDebt || 0,
-      total: totalDebt,
-    },
-    savings: {
-      emergency: inputs.totalSavings,
-      retirement: inputs.retirementSavings,
-      investments: inputs.investments || 0,
-      crypto: inputs.crypto || 0,
-      brokerage: inputs.brokerage || 0,
-      total: totalSavings,
-    },
-    creditScore: inputs.creditScore,
-    calculatedMetrics: {
-      ...metrics,
-      score,
-      tier,
-      emergencyMonths: Math.round(emergencyMonths * 10) / 10,
+    peers: {
+      // City peers - queried from DB where city = user's city
+      city: peerData.city.count > 0 ? {
+        city: peerData.city.city,
+        count: peerData.city.count,
+        avgScore: peerData.city.avgScore,
+        avgIncome: peerData.city.avgIncome,
+        avgRent: peerData.city.avgRent,
+        avgNetWorth: peerData.city.avgNetWorth,
+        avgRentBurden: peerData.city.avgRentBurden,
+      } : null,
+      
+      // Age peers - queried from DB where age between user's age ±3
+      ageGroup: peerData.ageGroup.count > 0 ? {
+        range: peerData.ageGroup.ageRange,
+        count: peerData.ageGroup.count,
+        avgScore: peerData.ageGroup.avgScore,
+        avgIncome: peerData.ageGroup.avgIncome,
+        avgNetWorth: peerData.ageGroup.avgNetWorth,
+        avgRentBurden: peerData.ageGroup.avgRentBurden,
+      } : null,
+      
+      // Industry peers - queried from DB where industry matches
+      industry: peerData.industry.count > 0 ? {
+        industry: peerData.industry.industry,
+        count: peerData.industry.count,
+        avgScore: peerData.industry.avgScore,
+        avgIncome: peerData.industry.avgIncome,
+        avgNetWorth: peerData.industry.avgNetWorth,
+      } : null,
+      
+      // Overall - all users in DB
+      overall: peerData.overall.count > 0 ? {
+        count: peerData.overall.count,
+        avgScore: peerData.overall.avgScore,
+        avgIncome: peerData.overall.avgIncome,
+        avgNetWorth: peerData.overall.avgNetWorth,
+      } : null,
+      
+      // User's ranking
+      percentile: peerData.percentile,
     },
   };
-}
 
-/**
- * Call Groq API for analysis
- */
-export async function analyzeWithGroq(
-  input: AnalysisInput,
-  model: string = 'llama-3.1-8b-instant'
-): Promise<AIAnalysisResult> {
+  // Call Groq
   const apiKey = process.env.GROQ_API_KEY;
-  
   if (!apiKey) {
-    throw new Error('GROQ_API_KEY is not set. Get your free key at https://console.groq.com');
+    throw new Error('GROQ_API_KEY not set');
   }
-
-  const systemPrompt = getSystemPrompt();
-  
-  const userPrompt = `Analyze this person's financial situation and provide your analysis in the exact JSON format specified in your instructions.
-
-INPUT DATA:
-${JSON.stringify(input, null, 2)}
-
-IMPORTANT: All peer comparison data in "peerData" comes from REAL users who have taken this assessment. Use these actual numbers, not generic statistics.
-
-Respond ONLY with valid JSON matching the structure in your instructions. No markdown code blocks, just raw JSON.`;
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -361,58 +143,40 @@ Respond ONLY with valid JSON matching the structure in your instructions. No mar
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model,
+      model: 'llama-3.1-8b-instant',
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
+        { role: 'system', content: getSystemPrompt() },
+        { 
+          role: 'user', 
+          content: `Analyze this user's finances and compare to their peers from our database.
+
+USER DATA:
+${JSON.stringify(analysisInput.user, null, 2)}
+
+PEER DATA FROM DATABASE:
+${JSON.stringify(analysisInput.peers, null, 2)}
+
+Note: Peer data is from real users who took this assessment. If a peer category is null, we don't have enough data for that comparison.
+
+Return JSON with: summary, peerComparison, rootCauses, actionPlan, encouragement.`
+        }
       ],
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: 2048,
       response_format: { type: 'json_object' },
     }),
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error('Groq API error:', errorData);
-    throw new Error(`Groq API error: ${response.status} ${response.statusText}`);
+    throw new Error(`Groq API error: ${response.status}`);
   }
 
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content;
   
   if (!content) {
-    throw new Error('No content in Groq response');
+    throw new Error('No response from AI');
   }
 
-  try {
-    let jsonStr = content.trim();
-    if (jsonStr.startsWith('```json')) jsonStr = jsonStr.slice(7);
-    if (jsonStr.startsWith('```')) jsonStr = jsonStr.slice(3);
-    if (jsonStr.endsWith('```')) jsonStr = jsonStr.slice(0, -3);
-    
-    return JSON.parse(jsonStr.trim());
-  } catch (e) {
-    console.error('Failed to parse AI response:', content);
-    throw new Error('Failed to parse AI analysis response');
-  }
-}
-
-/**
- * Main analysis function
- */
-export async function getAIAnalysis(
-  inputs: UserInputs,
-  result: CookedResult,
-  baseUrl?: string
-): Promise<AIAnalysisResult> {
-  const analysisInput = await prepareAnalysisInput(
-    inputs,
-    result.metrics,
-    result.score,
-    result.tier,
-    baseUrl
-  );
-  
-  return analyzeWithGroq(analysisInput, 'llama-3.1-8b-instant');
+  return JSON.parse(content.trim());
 }
