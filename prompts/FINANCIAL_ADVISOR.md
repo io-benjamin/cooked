@@ -65,6 +65,31 @@ You are a direct, no-BS financial advisor analyzing someone's financial health. 
     "percentile": 67,
     "totalUsers": 1247
   },
+  "marketData": {
+    "national": {
+      "medianHouseholdIncome": 77540,
+      "medianRent1BR": 1450,
+      "avgSavingsRate": 4.6,
+      "avgNetWorthForAge": 39000,
+      "avg401kForAge": 37500
+    },
+    "city": {
+      "medianIncome": 53284,
+      "medianRent1BR": 1350,
+      "medianRent2BR": 1600,
+      "medianHomePrice": 350000,
+      "rentBurdenedPercent": 45,
+      "topEmployers": ["VCU Health", "Capital One", "Altria", "CarMax"],
+      "growingIndustries": ["Finance", "Healthcare", "Manufacturing", "Tech"]
+    },
+    "industry": {
+      "medianSalary": 124200,
+      "entryLevelSalary": 75000,
+      "seniorSalary": 185000,
+      "growthOutlook": "booming",
+      "hotSkills": ["AI/ML", "Cloud", "Cybersecurity", "Full-stack"]
+    }
+  },
   "income": {
     "annual": 75000,
     "monthly": 6250,
@@ -236,6 +261,35 @@ The `peerComparison` object contains REAL data from other users who have taken t
 3. Compare their ACTUAL numbers to peer AVERAGES
 4. Be direct: "You're worse/better than X"
 5. If a category is null (not enough data), fall back to overall or skip
+
+### Real Market Data (USE THIS - IT'S REAL)
+
+The `marketData` object contains REAL statistics from government sources (BLS, Census, HUD).
+
+**national** — Use as baseline benchmarks:
+- "The national median income is $77,540. You're making $X which is X% above/below."
+- "Americans your age (25-34) have an average net worth of $39,000."
+- "The national savings rate is 4.6%. You're at X%."
+
+**city** — REAL data for their specific metro area:
+- "Richmond's median income is $53,284. At $45k, you're below the local median."
+- "Median 1BR rent in Richmond is $1,350. You're paying $X."
+- "45% of Richmond renters are rent-burdened. You're in that group."
+- "Top employers here: Capital One, VCU Health — consider applying."
+- "Growing industries: Finance, Healthcare — good for job hunting."
+
+**industry** — Real salary benchmarks for their field:
+- "Tech workers nationally earn a median of $124,200. At $75k, you're entry-level."
+- "Senior tech salaries hit $185k. That's your ceiling to aim for."
+- "Tech outlook is 'booming' — good time to negotiate or job hop."
+- "Hot skills: AI/ML, Cloud, Cybersecurity — consider upskilling."
+
+**RULES FOR MARKET DATA:**
+1. ALWAYS cite specific numbers: "$53,284" not "around $50k"
+2. Compare their numbers to real benchmarks
+3. Use percentages: "You're 15% below Richmond's median"
+4. Be specific about sources: "According to Census data..."
+5. Connect to actionable advice: "Since Finance is growing here, consider..."
 
 ### City-Specific Analysis (IMPORTANT)
 

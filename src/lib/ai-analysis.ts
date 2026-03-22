@@ -7,6 +7,12 @@
 
 import { UserInputs, FinancialMetrics, CookedResult } from '@/types/calculator';
 import { COST_OF_LIVING_INDEX } from '@/data/cities';
+import { 
+  NATIONAL_BENCHMARKS, 
+  CITY_MARKET_DATA, 
+  INDUSTRY_BENCHMARKS, 
+  normalizeIndustry 
+} from '@/data/market-data';
 import fs from 'fs';
 import path from 'path';
 
@@ -159,6 +165,31 @@ interface AnalysisInput {
     isLowCOL: boolean;
   };
   peerComparison: PeerData;
+  marketData: {
+    national: {
+      medianHouseholdIncome: number;
+      medianRent1BR: number;
+      avgSavingsRate: number;
+      avgNetWorthForAge: number | null;
+      avg401kForAge: number | null;
+    };
+    city: {
+      medianIncome: number;
+      medianRent1BR: number;
+      medianRent2BR: number;
+      medianHomePrice: number;
+      rentBurdenedPercent: number;
+      topEmployers: string[];
+      growingIndustries: string[];
+    } | null;
+    industry: {
+      medianSalary: number;
+      entryLevelSalary: number;
+      seniorSalary: number;
+      growthOutlook: string;
+      hotSkills: string[];
+    } | null;
+  };
   income: {
     annual: number;
     monthly: number;
@@ -343,6 +374,17 @@ export async function prepareAnalysisInput(
   // Fetch real peer comparison data from our database
   const peerData = await fetchPeerData(inputs.city, inputs.industry, inputs.age, score, baseUrl);
 
+  // Get real market data
+  const cityMarketData = CITY_MARKET_DATA[inputs.city] || null;
+  const normalizedIndustry = normalizeIndustry(inputs.industry);
+  const industryData = normalizedIndustry ? INDUSTRY_BENCHMARKS[normalizedIndustry] : null;
+  
+  // Get age-appropriate benchmarks
+  const ageKey = inputs.age < 25 ? 'under25' : 
+                 inputs.age < 35 ? '25-34' :
+                 inputs.age < 45 ? '35-44' :
+                 inputs.age < 55 ? '45-54' : '55-64';
+
   return {
     demographics: {
       age: inputs.age,
@@ -359,6 +401,31 @@ export async function prepareAnalysisInput(
       isLowCOL: colIndex <= 85,
     },
     peerComparison: peerData,
+    marketData: {
+      national: {
+        medianHouseholdIncome: NATIONAL_BENCHMARKS.medianHouseholdIncome,
+        medianRent1BR: NATIONAL_BENCHMARKS.medianRent1BR,
+        avgSavingsRate: NATIONAL_BENCHMARKS.avgSavingsRate,
+        avgNetWorthForAge: NATIONAL_BENCHMARKS.avgNetWorthByAge[ageKey as keyof typeof NATIONAL_BENCHMARKS.avgNetWorthByAge] || null,
+        avg401kForAge: NATIONAL_BENCHMARKS.avg401kBalance[ageKey as keyof typeof NATIONAL_BENCHMARKS.avg401kBalance] || null,
+      },
+      city: cityMarketData ? {
+        medianIncome: cityMarketData.medianIncome,
+        medianRent1BR: cityMarketData.medianRent1BR,
+        medianRent2BR: cityMarketData.medianRent2BR,
+        medianHomePrice: cityMarketData.medianHomePrice,
+        rentBurdenedPercent: cityMarketData.rentBurdenedPercent,
+        topEmployers: cityMarketData.topEmployers,
+        growingIndustries: cityMarketData.growingIndustries,
+      } : null,
+      industry: industryData ? {
+        medianSalary: industryData.medianSalary,
+        entryLevelSalary: industryData.entryLevelSalary,
+        seniorSalary: industryData.seniorSalary,
+        growthOutlook: industryData.growthOutlook,
+        hotSkills: industryData.hotSkills,
+      } : null,
+    },
     income: {
       annual: inputs.annualIncome,
       monthly: Math.round(monthlyIncome),
