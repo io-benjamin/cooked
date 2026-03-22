@@ -89,14 +89,15 @@ export async function getAIAnalysis(
     },
     
     // Data from our submissions (null if insufficient)
+    // Prefer medianNetWorth and medianIncome over averages (less skewed by outliers)
     ourData: {
       city: peerData.city.count >= MIN_USERS_FOR_COMPARISON ? {
         source: 'our users',
         count: peerData.city.count,
         avgScore: peerData.city.avgScore,
-        avgIncome: peerData.city.avgIncome,
+        medianIncome: peerData.city.medianIncome,
         avgRent: peerData.city.avgRent,
-        avgNetWorth: peerData.city.avgNetWorth,
+        medianNetWorth: peerData.city.medianNetWorth,
       } : null,
       
       ageGroup: peerData.ageGroup.count >= MIN_USERS_FOR_COMPARISON ? {
@@ -104,16 +105,16 @@ export async function getAIAnalysis(
         range: peerData.ageGroup.ageRange,
         count: peerData.ageGroup.count,
         avgScore: peerData.ageGroup.avgScore,
-        avgIncome: peerData.ageGroup.avgIncome,
-        avgNetWorth: peerData.ageGroup.avgNetWorth,
+        medianIncome: peerData.ageGroup.medianIncome,
+        medianNetWorth: peerData.ageGroup.medianNetWorth,
       } : null,
       
       industry: peerData.industry.count >= MIN_USERS_FOR_COMPARISON ? {
         source: 'our users',
         count: peerData.industry.count,
         avgScore: peerData.industry.avgScore,
-        avgIncome: peerData.industry.avgIncome,
-        avgNetWorth: peerData.industry.avgNetWorth,
+        medianIncome: peerData.industry.medianIncome,
+        medianNetWorth: peerData.industry.medianNetWorth,
       } : null,
       
       overall: peerData.overall.count > 0 ? {

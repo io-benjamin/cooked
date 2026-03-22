@@ -12,7 +12,9 @@ interface PeerStats {
   avgDti: number | null;
   avgSavingsRate: number | null;
   avgNetWorth: number | null;
+  medianNetWorth: number | null;
   avgIncome: number | null;
+  medianIncome: number | null;
   avgRent: number | null;
 }
 
@@ -29,8 +31,10 @@ export async function queryByCity(city: string): Promise<PeerStats & { city: str
     .eq('is_public', true);
   
   if (error || !data || data.length === 0) {
-    return { city, count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, avgIncome: null, avgRent: null };
+    return { city, count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, medianNetWorth: null, avgIncome: null, medianIncome: null, avgRent: null };
   }
+  
+  const incomes = data.filter(d => d.annual_income).map(d => d.annual_income!);
   
   return {
     city,
@@ -40,7 +44,9 @@ export async function queryByCity(city: string): Promise<PeerStats & { city: str
     avgDti: avg(data.map(d => d.dti)),
     avgSavingsRate: avg(data.map(d => d.savings_rate)),
     avgNetWorth: avg(data.map(d => d.net_worth)),
-    avgIncome: avg(data.filter(d => d.annual_income).map(d => d.annual_income!)),
+    medianNetWorth: median(data.map(d => d.net_worth)),
+    avgIncome: avg(incomes),
+    medianIncome: median(incomes),
     avgRent: avg(data.filter(d => d.monthly_rent).map(d => d.monthly_rent!)),
   };
 }
@@ -61,8 +67,10 @@ export async function queryByAgeRange(age: number): Promise<PeerStats & { ageRan
     .eq('is_public', true);
   
   if (error || !data || data.length === 0) {
-    return { ageRange: `${minAge}-${maxAge}`, count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, avgIncome: null, avgRent: null };
+    return { ageRange: `${minAge}-${maxAge}`, count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, medianNetWorth: null, avgIncome: null, medianIncome: null, avgRent: null };
   }
+  
+  const incomes = data.filter(d => d.annual_income).map(d => d.annual_income!);
   
   return {
     ageRange: `${minAge}-${maxAge}`,
@@ -72,7 +80,9 @@ export async function queryByAgeRange(age: number): Promise<PeerStats & { ageRan
     avgDti: avg(data.map(d => d.dti)),
     avgSavingsRate: avg(data.map(d => d.savings_rate)),
     avgNetWorth: avg(data.map(d => d.net_worth)),
-    avgIncome: avg(data.filter(d => d.annual_income).map(d => d.annual_income!)),
+    medianNetWorth: median(data.map(d => d.net_worth)),
+    avgIncome: avg(incomes),
+    medianIncome: median(incomes),
     avgRent: avg(data.filter(d => d.monthly_rent).map(d => d.monthly_rent!)),
   };
 }
@@ -90,8 +100,10 @@ export async function queryByIndustry(industry: string): Promise<PeerStats & { i
     .eq('is_public', true);
   
   if (error || !data || data.length === 0) {
-    return { industry, count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, avgIncome: null, avgRent: null };
+    return { industry, count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, medianNetWorth: null, avgIncome: null, medianIncome: null, avgRent: null };
   }
+  
+  const incomes = data.filter(d => d.annual_income).map(d => d.annual_income!);
   
   return {
     industry,
@@ -101,7 +113,9 @@ export async function queryByIndustry(industry: string): Promise<PeerStats & { i
     avgDti: avg(data.map(d => d.dti)),
     avgSavingsRate: avg(data.map(d => d.savings_rate)),
     avgNetWorth: avg(data.map(d => d.net_worth)),
-    avgIncome: avg(data.filter(d => d.annual_income).map(d => d.annual_income!)),
+    medianNetWorth: median(data.map(d => d.net_worth)),
+    avgIncome: avg(incomes),
+    medianIncome: median(incomes),
     avgRent: avg(data.filter(d => d.monthly_rent).map(d => d.monthly_rent!)),
   };
 }
@@ -118,8 +132,10 @@ export async function queryOverall(): Promise<PeerStats> {
     .eq('is_public', true);
   
   if (error || !data || data.length === 0) {
-    return { count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, avgIncome: null, avgRent: null };
+    return { count: 0, avgScore: null, avgRentBurden: null, avgDti: null, avgSavingsRate: null, avgNetWorth: null, medianNetWorth: null, avgIncome: null, medianIncome: null, avgRent: null };
   }
+  
+  const incomes = data.filter(d => d.annual_income).map(d => d.annual_income!);
   
   return {
     count: data.length,
@@ -128,7 +144,9 @@ export async function queryOverall(): Promise<PeerStats> {
     avgDti: avg(data.map(d => d.dti)),
     avgSavingsRate: avg(data.map(d => d.savings_rate)),
     avgNetWorth: avg(data.map(d => d.net_worth)),
-    avgIncome: avg(data.filter(d => d.annual_income).map(d => d.annual_income!)),
+    medianNetWorth: median(data.map(d => d.net_worth)),
+    avgIncome: avg(incomes),
+    medianIncome: median(incomes),
     avgRent: avg(data.filter(d => d.monthly_rent).map(d => d.monthly_rent!)),
   };
 }
@@ -181,4 +199,14 @@ export async function getAllPeerData(city: string, age: number, industry: string
 function avg(arr: number[]): number | null {
   if (arr.length === 0) return null;
   return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+}
+
+function median(arr: number[]): number | null {
+  if (arr.length === 0) return null;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+  }
+  return sorted[mid];
 }
