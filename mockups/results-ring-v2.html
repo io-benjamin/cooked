@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Am I Cooked? — Results</title>
+  
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'General Sans', sans-serif; }
+    .font-display { font-family: 'Satoshi', sans-serif; }
+    
+    body { background: #07070A; }
+    
+    /* Progress ring */
+    .ring-container {
+      position: relative;
+      width: 240px;
+      height: 240px;
+    }
+    
+    .ring-container svg { transform: rotate(-90deg); }
+    
+    .ring-container circle {
+      fill: none;
+      stroke-linecap: round;
+    }
+    
+    .ring-bg { stroke: rgba(255,255,255,0.04); stroke-width: 12; }
+    
+    .ring-progress {
+      stroke: url(#ringGrad);
+      stroke-width: 12;
+      stroke-dasharray: 628;
+      stroke-dashoffset: calc(628 - (628 * 73) / 100);
+      animation: drawRing 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      filter: drop-shadow(0 0 12px rgba(244,63,94,0.4));
+    }
+    
+    @keyframes drawRing {
+      from { stroke-dashoffset: 628; }
+    }
+    
+    .ring-inner {
+      position: absolute;
+      inset: 24px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Verdict card */
+    .verdict {
+      background: linear-gradient(135deg, rgba(244,63,94,0.08) 0%, rgba(251,113,133,0.03) 100%);
+      border: 1px solid rgba(244,63,94,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .verdict::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(244,63,94,0.5), transparent);
+    }
+    
+    /* CTA */
+    .cta-btn {
+      position: relative;
+      background: #F43F5E;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .cta-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+    
+    .cta-btn:hover::after {
+      transform: translateX(100%);
+    }
+    
+    .cta-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 50px rgba(244,63,94,0.3);
+    }
+    
+    /* Animations */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .anim-slide { animation: slideUp 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards; opacity: 0; }
+    .anim-fade { animation: fadeIn 0.5s ease forwards; opacity: 0; }
+    
+    .d1 { animation-delay: 0.1s; }
+    .d2 { animation-delay: 0.3s; }
+    .d3 { animation-delay: 0.5s; }
+    .d4 { animation-delay: 0.7s; }
+    .d5 { animation-delay: 0.9s; }
+  </style>
+</head>
+<body class="text-white antialiased min-h-screen flex flex-col">
+  
+  <!-- Header -->
+  <header class="px-6 py-5">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <span class="font-display font-bold text-sm text-white/30">am i cooked?</span>
+      <button class="flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Save
+      </button>
+    </div>
+  </header>
+  
+  <!-- Main -->
+  <main class="flex-1 flex flex-col items-center justify-center px-6 py-8">
+    
+    <div class="max-w-md w-full">
+      
+      <!-- Ring + Score -->
+      <div class="anim-slide d1 flex justify-center mb-6">
+        <div class="ring-container">
+          <svg width="240" height="240" viewBox="0 0 240 240">
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F43F5E"/>
+                <stop offset="100%" stop-color="#E11D48"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-bg" cx="120" cy="120" r="100"/>
+            <circle class="ring-progress" cx="120" cy="120" r="100"/>
+          </svg>
+          <div class="ring-inner">
+            <span class="font-display font-black text-6xl tracking-tight">73</span>
+            <span class="text-white/30 text-xs font-medium uppercase tracking-widest mt-1">Score</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Verdict Card -->
+      <div class="anim-slide d2 verdict rounded-2xl p-6 mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+            <span class="text-lg">🔥</span>
+          </div>
+          <div>
+            <span class="font-display font-bold text-lg">Sautéed</span>
+            <span class="text-white/30 text-sm ml-2">Level 4 of 6</span>
+          </div>
+        </div>
+        
+        <div class="border-t border-white/[0.06] pt-4">
+          <p class="text-white/50 text-sm leading-relaxed">
+            <span class="text-white font-semibold">Rent at 52%</span> of income is your biggest issue. You're spending $800/mo more than recommended for your salary.
+          </p>
+        </div>
+      </div>
+      
+      <!-- Quick Stats -->
+      <div class="anim-slide d3 grid grid-cols-3 gap-3 mb-8">
+        <div class="text-center p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <div class="text-red-400 font-display font-bold text-xl">52%</div>
+          <div class="text-white/30 text-[10px] uppercase tracking-wider mt-1">Rent</div>
+        </div>
+        <div class="text-center p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <div class="text-yellow-400 font-display font-bold text-xl">38%</div>
+          <div class="text-white/30 text-[10px] uppercase tracking-wider mt-1">DTI</div>
+        </div>
+        <div class="text-center p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <div class="text-green-400 font-display font-bold text-xl">8%</div>
+          <div class="text-white/30 text-[10px] uppercase tracking-wider mt-1">Savings</div>
+        </div>
+      </div>
+      
+      <!-- CTA -->
+      <div class="anim-slide d4">
+        <button class="cta-btn w-full py-4 rounded-2xl font-display font-bold text-base text-white">
+          Get Full Report — $5
+        </button>
+      </div>
+      
+      <!-- Subtext -->
+      <p class="anim-fade d5 text-center text-white/20 text-xs mt-4">
+        Includes AI analysis, action plan, and peer comparison
+      </p>
+      
+    </div>
+    
+  </main>
+  
+  <!-- Footer -->
+  <footer class="py-4">
+    <p class="text-center text-[10px] text-white/10">For entertainment purposes only</p>
+  </footer>
+  
+</body>
+</html>
