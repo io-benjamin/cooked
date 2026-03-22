@@ -96,16 +96,13 @@ export function CookedMeter({ result }: CookedMeterProps) {
   }, [result.score]);
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
-      
-      {/* Background */}
-      <div className="fixed inset-0 bg-[#030305]" />
+    <div className="relative w-full max-w-lg mx-auto">
       
       {/* Floating particles */}
-      {[10, 20, 40, 60, 80, 90].map((left, i) => (
+      {[10, 30, 50, 70, 90].map((left, i) => (
         <div 
           key={i}
-          className="fixed w-1 h-1 rounded-full animate-particle"
+          className="fixed w-1 h-1 rounded-full animate-particle pointer-events-none"
           style={{ 
             left: `${left}%`, 
             animationDelay: `${i * 1.5}s`,
@@ -119,16 +116,14 @@ export function CookedMeter({ result }: CookedMeterProps) {
       <div 
         className="fixed top-1/3 left-1/2 w-[200%] h-[300px] -translate-x-1/2 -translate-y-1/2 animate-light-pulse pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse at center, ${tier.color}20 0%, ${tier.color}08 30%, transparent 70%)`
+          background: `radial-gradient(ellipse at center, ${tier.color}15 0%, ${tier.color}05 30%, transparent 70%)`
         }}
       />
       
-      {/* Header */}
-      <header className="relative z-50 px-6 py-5">
-        <div className="max-w-xl mx-auto flex items-center justify-between">
-          <a href="/" className="font-display font-bold text-white/40 hover:text-white transition-colors">
-            am i cooked?
-          </a>
+      <div className={`text-center transition-opacity duration-500 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+        
+        {/* Save Button */}
+        <div className="flex justify-end mb-6">
           <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/50 hover:text-white hover:bg-white/10 transition-all">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -139,165 +134,156 @@ export function CookedMeter({ result }: CookedMeterProps) {
             Save results
           </button>
         </div>
-      </header>
-      
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
-        <div className={`max-w-lg w-full text-center transition-opacity duration-500 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
-          
-          {/* Score with Ring */}
-          <div className="relative inline-block mb-6">
-            {/* Glow behind score */}
-            <div 
-              className="absolute inset-[-40px] rounded-full animate-glow-pulse blur-[40px]"
-              style={{ background: `radial-gradient(circle, ${tier.color}40 0%, transparent 70%)` }}
-            />
-            
-            {/* Progress Ring Container */}
-            <div className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px]">
-              {/* SVG Ring */}
-              <svg 
-                className="w-full h-full -rotate-90"
-                viewBox="0 0 320 320"
-              >
-                <defs>
-                  <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor={tier.color} />
-                    <stop offset="100%" stopColor={tier.colorLight} />
-                  </linearGradient>
-                </defs>
-                {/* Background ring */}
-                <circle
-                  cx="160"
-                  cy="160"
-                  r="140"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.04)"
-                  strokeWidth="12"
-                />
-                {/* Progress ring */}
-                <circle
-                  cx="160"
-                  cy="160"
-                  r="140"
-                  fill="none"
-                  stroke="url(#ringGradient)"
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 140}
-                  strokeDashoffset={2 * Math.PI * 140 * (1 - animatedScore / 100)}
-                  style={{
-                    filter: `drop-shadow(0 0 12px ${tier.color}80)`,
-                    transition: 'stroke-dashoffset 0.1s ease-out',
-                  }}
-                />
-              </svg>
-              
-              {/* Score number in center */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div 
-                  className="font-display font-black leading-none tracking-tight"
-                  style={{ 
-                    fontSize: 'clamp(72px, 18vw, 96px)',
-                    background: 'linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.6) 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  {animatedScore}
-                </div>
-                <span className="text-white/30 text-xs font-medium uppercase tracking-widest mt-1">
-                  Score
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Tier Badge */}
+        
+        {/* Score with Ring */}
+        <div className="relative inline-block mb-6">
+          {/* Glow behind score */}
           <div 
-            className={`inline-flex items-center gap-3 px-6 py-3 rounded-full mb-12 relative overflow-hidden ${showContent ? 'animate-reveal-up' : ''}`}
-            style={{ 
-              animationDelay: '0.3s',
-              background: `linear-gradient(135deg, ${tier.color}30 0%, ${tier.color}10 100%)`,
-              border: `1px solid ${tier.color}50`,
-            }}
-          >
-            {/* Shimmer effect */}
-            <div 
-              className="absolute inset-0 animate-shimmer"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
-            />
-            <span className="text-2xl relative z-10">{tier.emoji}</span>
-            <span 
-              className="font-display font-bold text-lg uppercase tracking-wider relative z-10"
-              style={{ color: tier.colorLight }}
+            className="absolute inset-[-40px] rounded-full animate-glow-pulse blur-[40px]"
+            style={{ background: `radial-gradient(circle, ${tier.color}40 0%, transparent 70%)` }}
+          />
+          
+          {/* Progress Ring Container */}
+          <div className="relative w-[240px] h-[240px] sm:w-[280px] sm:h-[280px]">
+            {/* SVG Ring */}
+            <svg 
+              className="w-full h-full -rotate-90"
+              viewBox="0 0 280 280"
             >
-              {tier.name}
-            </span>
-          </div>
-          
-          {/* Issue Card */}
-          <div 
-            className={`rounded-2xl p-6 mb-8 text-left relative overflow-hidden ${showContent ? 'animate-reveal-up' : ''}`}
-            style={{ 
-              animationDelay: '0.5s',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            {/* Top glow line */}
-            <div 
-              className="absolute top-0 left-[20%] right-[20%] h-px"
-              style={{ background: `linear-gradient(90deg, transparent, ${tier.color}80, transparent)` }}
-            />
-            
-            <div className="flex items-center gap-3 mb-3">
-              <div 
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{ background: tier.color }}
+              <defs>
+                <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={tier.color} />
+                  <stop offset="100%" stopColor={tier.colorLight} />
+                </linearGradient>
+              </defs>
+              {/* Background ring */}
+              <circle
+                cx="140"
+                cy="140"
+                r="120"
+                fill="none"
+                stroke="rgba(255,255,255,0.04)"
+                strokeWidth="12"
               />
-              <span className="text-xs uppercase tracking-widest text-white/40">Primary Issue</span>
+              {/* Progress ring */}
+              <circle
+                cx="140"
+                cy="140"
+                r="120"
+                fill="none"
+                stroke="url(#ringGradient)"
+                strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 120}
+                strokeDashoffset={2 * Math.PI * 120 * (1 - animatedScore / 100)}
+                style={{
+                  filter: `drop-shadow(0 0 12px ${tier.color}80)`,
+                  transition: 'stroke-dashoffset 0.1s ease-out',
+                }}
+              />
+            </svg>
+            
+            {/* Score number in center */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div 
+                className="font-display font-black leading-none tracking-tight"
+                style={{ 
+                  fontSize: 'clamp(56px, 14vw, 72px)',
+                  background: 'linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.6) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {animatedScore}
+              </div>
+              <span className="text-white/30 text-xs font-medium uppercase tracking-widest mt-1">
+                Score
+              </span>
             </div>
-            <h2 className="font-display text-xl font-bold mb-2 text-white">
-              {topIssue.title}
-            </h2>
-            <p className="text-white/40 text-sm">
-              {topIssue.detail}
-            </p>
           </div>
-          
-          {/* CTA Button */}
-          <div className={showContent ? 'animate-reveal-up' : ''} style={{ animationDelay: '0.7s' }}>
-            <button 
-              className="w-full py-5 rounded-2xl font-display font-bold text-lg text-white relative overflow-hidden group transition-all duration-300 hover:-translate-y-1"
-              style={{ 
-                background: tier.color,
-                boxShadow: `0 10px 40px ${tier.color}40`,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = `0 20px 50px ${tier.color}60`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = `0 10px 40px ${tier.color}40`;
-              }}
-            >
-              {/* Button shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="relative z-10">Get Full Report — $5</span>
-            </button>
-            <p className="mt-4 text-white/25 text-xs">
-              AI-powered analysis • Personalized action plan
-            </p>
-          </div>
-          
         </div>
-      </main>
-      
-      {/* Footer */}
-      <footer className="relative z-10 py-4">
-        <p className="text-center text-[10px] text-white/15">For entertainment purposes only. Not financial advice.</p>
-      </footer>
-      
+        
+        {/* Tier Badge */}
+        <div 
+          className={`inline-flex items-center gap-3 px-6 py-3 rounded-full mb-10 relative overflow-hidden ${showContent ? 'animate-reveal-up' : ''}`}
+          style={{ 
+            animationDelay: '0.3s',
+            background: `linear-gradient(135deg, ${tier.color}30 0%, ${tier.color}10 100%)`,
+            border: `1px solid ${tier.color}50`,
+          }}
+        >
+          {/* Shimmer effect */}
+          <div 
+            className="absolute inset-0 animate-shimmer"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
+          />
+          <span className="text-2xl relative z-10">{tier.emoji}</span>
+          <span 
+            className="font-display font-bold text-lg uppercase tracking-wider relative z-10"
+            style={{ color: tier.colorLight }}
+          >
+            {tier.name}
+          </span>
+        </div>
+        
+        {/* Issue Card */}
+        <div 
+          className={`rounded-2xl p-6 mb-8 text-left relative overflow-hidden ${showContent ? 'animate-reveal-up' : ''}`}
+          style={{ 
+            animationDelay: '0.5s',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          {/* Top glow line */}
+          <div 
+            className="absolute top-0 left-[20%] right-[20%] h-px"
+            style={{ background: `linear-gradient(90deg, transparent, ${tier.color}80, transparent)` }}
+          />
+          
+          <div className="flex items-center gap-3 mb-3">
+            <div 
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ background: tier.color }}
+            />
+            <span className="text-xs uppercase tracking-widest text-white/40">Primary Issue</span>
+          </div>
+          <h2 className="font-display text-xl font-bold mb-2 text-white">
+            {topIssue.title}
+          </h2>
+          <p className="text-white/40 text-sm">
+            {topIssue.detail}
+          </p>
+        </div>
+        
+        {/* CTA Button */}
+        <div className={showContent ? 'animate-reveal-up' : ''} style={{ animationDelay: '0.7s' }}>
+          <button 
+            className="w-full py-5 rounded-2xl font-display font-bold text-lg text-white relative overflow-hidden group transition-all duration-300 hover:-translate-y-1"
+            style={{ 
+              background: tier.color,
+              boxShadow: `0 10px 40px ${tier.color}40`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = `0 20px 50px ${tier.color}60`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = `0 10px 40px ${tier.color}40`;
+            }}
+          >
+            {/* Button shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="relative z-10">Get Full Report — $5</span>
+          </button>
+          <p className="mt-4 text-white/25 text-xs">
+            AI-powered analysis • Personalized action plan
+          </p>
+        </div>
+        
+        {/* Footer disclaimer */}
+        <p className="mt-8 text-[10px] text-white/15">For entertainment purposes only. Not financial advice.</p>
+        
+      </div>
     </div>
   );
 }
