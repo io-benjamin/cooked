@@ -58,7 +58,7 @@ export interface FinancialMetrics {
   netWorth: number; // Total savings - total debt
 }
 
-export type CookedTier = 'raw' | 'medium-rare' | 'medium' | 'well-done' | 'charcoal' | 'ash';
+export type CookedTier = 'raw' | 'light-sizzle' | 'simmering' | 'sauteed' | 'well-done' | 'charred';
 
 export interface ScoreBreakdown {
   rentScore: number;

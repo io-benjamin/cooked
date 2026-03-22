@@ -28,12 +28,12 @@ const RETIREMENT_BENCHMARKS: Record<number, number> = {
 
 // Tier thresholds and info
 const TIERS: { max: number; tier: CookedTier; emoji: string; label: string }[] = [
-  { max: 20, tier: 'raw', emoji: '🥩', label: 'Raw' },
-  { max: 40, tier: 'medium-rare', emoji: '🍖', label: 'Medium Rare' },
-  { max: 60, tier: 'medium', emoji: '🥓', label: 'Medium' },
-  { max: 75, tier: 'well-done', emoji: '🔥', label: 'Well Done' },
-  { max: 90, tier: 'charcoal', emoji: '🖤', label: 'Charcoal' },
-  { max: 100, tier: 'ash', emoji: '💀', label: 'Ash' },
+  { max: 15, tier: 'raw', emoji: '🧊', label: 'Raw' },
+  { max: 30, tier: 'light-sizzle', emoji: '🍳', label: 'Light Sizzle' },
+  { max: 45, tier: 'simmering', emoji: '🥘', label: 'Simmering' },
+  { max: 60, tier: 'sauteed', emoji: '🔥', label: 'Sautéed' },
+  { max: 80, tier: 'well-done', emoji: '☠️', label: 'Well Done' },
+  { max: 100, tier: 'charred', emoji: '💀', label: 'Charred' },
 ];
 
 export function calculateCookedScore(inputs: UserInputs, colMap?: ColMap): CookedResult {
