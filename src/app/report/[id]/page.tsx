@@ -79,15 +79,34 @@ function HorizontalBar({ label, percent, amount, color }: { label: string; perce
   );
 }
 
-// Comparison Card
-function ComparisonCard({ icon, label, text }: { icon: string; label: string; text: string }) {
+// Flip Card - tap to reveal
+function FlipCard({ icon, label, frontText, backText }: { icon: string; label: string; frontText: string; backText: string }) {
+  const [flipped, setFlipped] = useState(false);
+  
   return (
-    <div className="min-w-[280px] snap-center bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xl">{icon}</span>
-        <span className="text-xs font-bold uppercase tracking-widest text-white/40">{label}</span>
+    <div 
+      className="min-w-[280px] md:min-w-0 snap-center perspective-1000 cursor-pointer h-[140px]"
+      onClick={() => setFlipped(!flipped)}
+    >
+      <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
+        {/* Front */}
+        <div className="absolute inset-0 backface-hidden bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">{icon}</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-white/40">{label}</span>
+          </div>
+          <p className="text-white/80 text-sm leading-relaxed line-clamp-3">{frontText}</p>
+          <div className="absolute bottom-3 right-3 text-white/30 text-xs">tap to flip →</div>
+        </div>
+        {/* Back */}
+        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border border-white/20 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">📈</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-white/60">Details</span>
+          </div>
+          <p className="text-white text-sm leading-relaxed">{backText}</p>
+        </div>
       </div>
-      <p className="text-white/80 text-sm leading-relaxed">{text}</p>
     </div>
   );
 }
@@ -251,112 +270,137 @@ export default function ReportPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0a0a0f]/80 border-b border-white/5">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="text-2xl">🔥</Link>
           <span className="text-sm font-bold uppercase tracking-widest" style={{ color: tier.color }}>{tier.emoji} {tier.name}</span>
           <Link href={`/results/${submission.id}`} className="text-white/50 text-sm">Share</Link>
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6 relative z-10">
+      <div className="max-w-5xl mx-auto px-4 py-8 relative z-10">
+        
+        {/* Desktop: 2-column layout, Mobile: stacked */}
+        <div className="grid lg:grid-cols-[300px_1fr] gap-8">
+          
+          {/* Left Column - Score & Summary (sticky on desktop) */}
+          <div className="lg:sticky lg:top-24 lg:self-start space-y-6">
+            {/* Score Ring */}
+            <section className="flex flex-col items-center text-center">
+              <ScoreRing score={submission.score} color={tier.color} />
+              <p className="mt-6 text-white/60 text-sm leading-relaxed">{analysis.summary.oneLiner}</p>
+            </section>
 
-        {/* Hero: Score Ring */}
-        <section className="flex flex-col items-center text-center pt-4 pb-2">
-          <ScoreRing score={submission.score} color={tier.color} />
-          <p className="mt-6 text-white/60 text-sm leading-relaxed max-w-xs">{analysis.summary.oneLiner}</p>
-        </section>
+            {/* Top Issue */}
+            <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-xl flex-shrink-0">🎯</div>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-1">Top Issue</div>
+                  <p className="text-white font-medium">{analysis.summary.biggestProblem}</p>
+                </div>
+              </div>
+            </section>
 
-        {/* Top Issue */}
-        <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-xl">🎯</div>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-1">Top Issue</div>
-              <p className="text-white font-medium">{analysis.summary.biggestProblem}</p>
+            {/* Spending Breakdown */}
+            <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">💸</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-white/40">Money Breakdown</span>
+              </div>
+              <HorizontalBar label="Rent" percent={rentPercent} amount={submission.monthly_rent} color="#ef4444" />
+              <HorizontalBar label="Debt" percent={debtPercent} amount={Math.round(debtPayments)} color="#f97316" />
+              <HorizontalBar label="Savings" percent={savingsPercent} amount={Math.round(savingsAmount)} color="#22c55e" />
+              <div className="pt-3 border-t border-white/10 flex justify-between text-sm">
+                <span className="text-white/50">Monthly</span>
+                <span className="font-bold text-white">${Math.round(monthlyIncome).toLocaleString()}</span>
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column - Details */}
+          <div className="space-y-6">
+            
+            {/* Peer Comparisons - Grid on desktop, scroll on mobile */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📊</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-white/40">How You Compare</span>
+                <span className="text-xs text-white/30 ml-auto hidden md:block">Click cards to flip</span>
+              </div>
+              
+              {/* Mobile: horizontal scroll */}
+              <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:hidden -mx-4 px-4">
+                <FlipCard icon="🏙️" label="Your City" frontText={analysis.peerComparison.vsCity.slice(0, 100) + '...'} backText={analysis.peerComparison.vsCity} />
+                <FlipCard icon="👥" label="Age Group" frontText={analysis.peerComparison.vsAgeGroup.slice(0, 100) + '...'} backText={analysis.peerComparison.vsAgeGroup} />
+                <FlipCard icon="💼" label="Industry" frontText={analysis.peerComparison.vsIndustry.slice(0, 100) + '...'} backText={analysis.peerComparison.vsIndustry} />
+                <FlipCard icon="🌍" label="Overall" frontText={analysis.peerComparison.vsOverall.slice(0, 100) + '...'} backText={analysis.peerComparison.vsOverall} />
+              </div>
+              
+              {/* Desktop: 2x2 grid */}
+              <div className="hidden md:grid md:grid-cols-2 gap-3">
+                <FlipCard icon="🏙️" label="Your City" frontText={analysis.peerComparison.vsCity.slice(0, 80) + '...'} backText={analysis.peerComparison.vsCity} />
+                <FlipCard icon="👥" label="Age Group" frontText={analysis.peerComparison.vsAgeGroup.slice(0, 80) + '...'} backText={analysis.peerComparison.vsAgeGroup} />
+                <FlipCard icon="💼" label="Industry" frontText={analysis.peerComparison.vsIndustry.slice(0, 80) + '...'} backText={analysis.peerComparison.vsIndustry} />
+                <FlipCard icon="🌍" label="Overall" frontText={analysis.peerComparison.vsOverall.slice(0, 80) + '...'} backText={analysis.peerComparison.vsOverall} />
+              </div>
+            </section>
+
+            {/* Issues - 2 column on desktop */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚠️</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-white/40">What&apos;s Cooking You</span>
+              </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                {analysis.rootCauses.map((cause, i) => (
+                  <IssueCard key={i} issue={cause.issue} explanation={cause.explanation} severity={cause.severity} />
+                ))}
+              </div>
+            </section>
+
+            {/* Action Plan & Encouragement - side by side on desktop */}
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Action Plan Timeline */}
+              <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="text-xl">🎯</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/40">Action Plan</span>
+                </div>
+                <div className="ml-3">
+                  <TimelineItem period="Today" items={[analysis.actionPlan.immediate]} icon="⚡" highlight />
+                  <TimelineItem period="30 Days" items={analysis.actionPlan.thirtyDays} icon="📅" />
+                  <TimelineItem period="90 Days" items={analysis.actionPlan.ninetyDays} icon="🎯" />
+                </div>
+              </section>
+
+              {/* What You're Doing Right */}
+              <section className="bg-green-500/5 border border-green-500/20 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">💪</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-green-400">Doing Right</span>
+                </div>
+                <ul className="space-y-3">
+                  {analysis.encouragement.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span className="text-white/80 text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             </div>
-          </div>
-        </section>
 
-        {/* Spending Breakdown */}
-        <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">💸</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-white/40">Where Your Money Goes</span>
+            {/* Footer Actions */}
+            <section className="flex gap-3">
+              <Link href={`/results/${submission.id}`} className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium text-white/70 hover:bg-white/10 transition">
+                🔗 Share
+              </Link>
+              <Link href="/leaderboard" className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium text-white/70 hover:bg-white/10 transition">
+                🏆 Leaderboard
+              </Link>
+            </section>
           </div>
-          <HorizontalBar label="Rent" percent={rentPercent} amount={submission.monthly_rent} color="#ef4444" />
-          <HorizontalBar label="Debt Payments" percent={debtPercent} amount={Math.round(debtPayments)} color="#f97316" />
-          <HorizontalBar label="Savings" percent={savingsPercent} amount={Math.round(savingsAmount)} color="#22c55e" />
-          <div className="pt-3 border-t border-white/10 flex justify-between text-sm">
-            <span className="text-white/50">Monthly Income</span>
-            <span className="font-bold text-white">${Math.round(monthlyIncome).toLocaleString()}</span>
-          </div>
-        </section>
-
-        {/* Peer Comparisons - Horizontal Scroll */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <span className="text-xl">📊</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-white/40">How You Compare</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
-            <ComparisonCard icon="🏙️" label="Your City" text={analysis.peerComparison.vsCity} />
-            <ComparisonCard icon="👥" label="Age Group" text={analysis.peerComparison.vsAgeGroup} />
-            <ComparisonCard icon="💼" label="Industry" text={analysis.peerComparison.vsIndustry} />
-            <ComparisonCard icon="🌍" label="Overall" text={analysis.peerComparison.vsOverall} />
-          </div>
-        </section>
-
-        {/* Issues */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <span className="text-xl">⚠️</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-white/40">What&apos;s Cooking You</span>
-          </div>
-          <div className="space-y-3">
-            {analysis.rootCauses.map((cause, i) => (
-              <IssueCard key={i} issue={cause.issue} explanation={cause.explanation} severity={cause.severity} />
-            ))}
-          </div>
-        </section>
-
-        {/* Action Plan Timeline */}
-        <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-6">
-            <span className="text-xl">🎯</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-white/40">Action Plan</span>
-          </div>
-          <div className="ml-3">
-            <TimelineItem period="Today" items={[analysis.actionPlan.immediate]} icon="⚡" highlight />
-            <TimelineItem period="30 Days" items={analysis.actionPlan.thirtyDays} icon="📅" />
-            <TimelineItem period="90 Days" items={analysis.actionPlan.ninetyDays} icon="🎯" />
-          </div>
-        </section>
-
-        {/* What You're Doing Right */}
-        <section className="bg-green-500/5 border border-green-500/20 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">💪</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-green-400">What You&apos;re Doing Right</span>
-          </div>
-          <ul className="space-y-3">
-            {analysis.encouragement.map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="text-green-400 mt-0.5">✓</span>
-                <span className="text-white/80 text-sm">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Footer Actions */}
-        <section className="flex gap-3 pt-2">
-          <Link href={`/results/${submission.id}`} className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium text-white/70 hover:bg-white/10 transition">
-            🔗 Share
-          </Link>
-          <Link href="/leaderboard" className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium text-white/70 hover:bg-white/10 transition">
-            🏆 Leaderboard
-          </Link>
-        </section>
+        </div>
 
         {/* Disclaimer */}
         <p className="text-center text-white/30 text-xs py-4 italic">{analysis.disclaimer}</p>
