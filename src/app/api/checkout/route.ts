@@ -12,9 +12,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { submissionId, email } = await request.json();
+    const body = await request.json();
+    console.log('Checkout request body:', body);
+    
+    const { submissionId, email } = body;
     
     if (!submissionId) {
+      console.log('Missing submissionId, received:', body);
       return NextResponse.json({ error: 'Missing submissionId' }, { status: 400 });
     }
 
