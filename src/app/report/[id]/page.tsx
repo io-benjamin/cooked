@@ -31,15 +31,25 @@ const TIERS: Record<string, { name: string; emoji: string; color: string }> = {
 };
 
 const SEVERITY = {
-  critical: { color: '#ef4444', bg: 'bg-red-500/10', border: 'border-red-500/30' },
-  high: { color: '#f97316', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
-  medium: { color: '#f59e0b', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
-  low: { color: '#22c55e', bg: 'bg-green-500/10', border: 'border-green-500/30' },
+  critical: { color: '#ef4444', bg: 'bg-red-500/10', border: 'border-red-500/30', dot: 'bg-red-500' },
+  high: { color: '#f97316', bg: 'bg-orange-500/10', border: 'border-orange-500/30', dot: 'bg-orange-500' },
+  medium: { color: '#f59e0b', bg: 'bg-amber-500/10', border: 'border-amber-500/30', dot: 'bg-amber-500' },
+  low: { color: '#22c55e', bg: 'bg-green-500/10', border: 'border-green-500/30', dot: 'bg-green-500' },
 };
 
-// Circular Progress Ring
-function ScoreRing({ score, color, size = 200 }: { score: number; color: string; size?: number }) {
-  const strokeWidth = 12;
+// Dashboard Card wrapper
+function Card({ children, className = '', span = 1 }: { children: React.ReactNode; className?: string; span?: 1 | 2 | 3 }) {
+  const spanClass = span === 3 ? 'md:col-span-3' : span === 2 ? 'md:col-span-2' : '';
+  return (
+    <div className={`bg-white/[0.03] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-5 ${spanClass} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// Score Ring
+function ScoreRing({ score, color, size = 140 }: { score: number; color: string; size?: number }) {
+  const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
@@ -47,104 +57,45 @@ function ScoreRing({ score, color, size = 200 }: { score: number; color: string;
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        {/* Background ring */}
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={strokeWidth} />
-        {/* Progress ring */}
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
         <circle
           cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
           strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          style={{ filter: `drop-shadow(0 0 20px ${color}60)`, transition: 'stroke-dashoffset 1s ease-out' }}
+          style={{ filter: `drop-shadow(0 0 15px ${color}50)` }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-5xl font-black text-white">{score}</span>
-        <span className="text-xs text-white/50 uppercase tracking-widest">Score</span>
+        <span className="text-4xl font-black text-white">{score}</span>
       </div>
     </div>
   );
 }
 
-// Horizontal Bar
-function HorizontalBar({ label, percent, amount, color }: { label: string; percent: number; amount: number; color: string }) {
+// Stat widget
+function StatWidget({ label, value, subtext, color, icon }: { label: string; value: string; subtext?: string; color?: string; icon: string }) {
   return (
-    <div className="space-y-2">
+    <div className="flex items-center gap-4">
+      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-2xl">{icon}</div>
+      <div>
+        <div className="text-xs text-white/40 uppercase tracking-wider">{label}</div>
+        <div className="text-xl font-bold" style={{ color: color || 'white' }}>{value}</div>
+        {subtext && <div className="text-xs text-white/40">{subtext}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Progress Bar
+function ProgressBar({ label, percent, color }: { label: string; percent: number; color: string }) {
+  return (
+    <div className="space-y-1.5">
       <div className="flex justify-between text-sm">
-        <span className="text-white/70">{label}</span>
-        <span className="text-white font-medium">{percent}% <span className="text-white/40">${amount.toLocaleString()}</span></span>
+        <span className="text-white/60">{label}</span>
+        <span className="text-white font-medium">{percent}%</span>
       </div>
-      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(percent, 100)}%`, backgroundColor: color }} />
+      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${Math.min(percent, 100)}%`, backgroundColor: color }} />
       </div>
-    </div>
-  );
-}
-
-// Flip Card - tap to reveal
-function FlipCard({ icon, label, frontText, backText }: { icon: string; label: string; frontText: string; backText: string }) {
-  const [flipped, setFlipped] = useState(false);
-  
-  return (
-    <div 
-      className="min-w-[280px] md:min-w-0 snap-center perspective-1000 cursor-pointer h-[140px]"
-      onClick={() => setFlipped(!flipped)}
-    >
-      <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
-        {/* Front */}
-        <div className="absolute inset-0 backface-hidden bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">{icon}</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-white/40">{label}</span>
-          </div>
-          <p className="text-white/80 text-sm leading-relaxed line-clamp-3">{frontText}</p>
-          <div className="absolute bottom-3 right-3 text-white/30 text-xs">tap to flip →</div>
-        </div>
-        {/* Back */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border border-white/20 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">📈</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-white/60">Details</span>
-          </div>
-          <p className="text-white text-sm leading-relaxed">{backText}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Issue Card
-function IssueCard({ issue, explanation, severity }: { issue: string; explanation: string; severity: keyof typeof SEVERITY }) {
-  const s = SEVERITY[severity];
-  return (
-    <div className={`${s.bg} ${s.border} border rounded-xl p-4`}>
-      <div className="flex items-start gap-3">
-        <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: s.color }} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-white">{issue}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full uppercase font-bold" style={{ backgroundColor: `${s.color}20`, color: s.color }}>
-              {severity}
-            </span>
-          </div>
-          <p className="text-white/60 text-sm leading-relaxed">{explanation}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Timeline Item
-function TimelineItem({ period, items, icon, highlight }: { period: string; items: string[]; icon: string; highlight?: boolean }) {
-  return (
-    <div className={`relative pl-8 pb-6 ${highlight ? '' : 'border-l border-white/10'}`}>
-      <div className={`absolute left-0 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center text-sm ${highlight ? 'bg-orange-500' : 'bg-white/10'}`}>
-        {icon}
-      </div>
-      <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2">{period}</div>
-      {items.map((item, i) => (
-        <p key={i} className={`text-sm leading-relaxed ${highlight ? 'text-white font-medium' : 'text-white/70'} ${i > 0 ? 'mt-2' : ''}`}>
-          {item}
-        </p>
-      ))}
     </div>
   );
 }
@@ -160,6 +111,14 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+
+  const toggleCard = (index: number) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(index)) newExpanded.delete(index);
+    else newExpanded.add(index);
+    setExpandedCards(newExpanded);
+  };
 
   useEffect(() => {
     async function fetchAndAnalyze() {
@@ -210,7 +169,7 @@ export default function ReportPage() {
   // Loading
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <main className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center"><div className="text-5xl animate-pulse">📊</div><p className="text-white/50 mt-4">Loading...</p></div>
       </main>
     );
@@ -219,11 +178,11 @@ export default function ReportPage() {
   // Analyzing
   if (analyzing) {
     return (
-      <main className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <main className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center max-w-sm px-6">
-          <div className="mb-8"><ScoreRing score={submission?.score || 0} color={tier.color} size={160} /></div>
-          <h1 className="text-2xl font-bold text-white mb-2">Analyzing your finances...</h1>
-          <p className="text-white/50 text-sm">Comparing you to 1,000+ users and building your action plan.</p>
+          <ScoreRing score={submission?.score || 0} color={tier.color} />
+          <h1 className="text-xl font-bold text-white mt-6 mb-2">Analyzing...</h1>
+          <p className="text-white/50 text-sm">Crunching numbers against 1,000+ users</p>
         </div>
       </main>
     );
@@ -232,14 +191,11 @@ export default function ReportPage() {
   // Payment required
   if (error === 'Payment required') {
     return (
-      <main className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <main className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center space-y-6 max-w-sm px-6">
           <div className="text-6xl">🔒</div>
           <h1 className="text-2xl font-bold text-white">Payment Required</h1>
-          <p className="text-white/50">Complete payment to unlock your full report.</p>
-          <Link href="/" className="inline-block w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl font-bold text-center">
-            Back to Quiz →
-          </Link>
+          <Link href="/" className="inline-block w-full py-4 bg-orange-500 rounded-xl font-bold">Back to Quiz →</Link>
         </div>
       </main>
     );
@@ -248,163 +204,188 @@ export default function ReportPage() {
   // Error
   if (error || !submission || !analysis) {
     return (
-      <main className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-center space-y-4"><div className="text-5xl">😕</div><p className="text-white/70">{error || 'Something went wrong'}</p></div>
+      <main className="min-h-screen bg-[#09090b] flex items-center justify-center">
+        <div className="text-center"><div className="text-5xl">😕</div><p className="text-white/70 mt-4">{error || 'Something went wrong'}</p></div>
       </main>
     );
   }
 
-  // Calculate spending breakdown
+  // Calculate values
   const monthlyIncome = submission.annual_income / 12;
   const rentPercent = Math.round((submission.monthly_rent / monthlyIncome) * 100);
   const debtPayments = ((submission.credit_card_debt || 0) * 0.03) + (((submission.student_loans || 0) + (submission.car_loan || 0) + (submission.other_debt || 0)) * 0.02);
   const debtPercent = Math.round((debtPayments / monthlyIncome) * 100);
-  const savingsAmount = monthlyIncome * (submission.savings_rate / 100);
-  const savingsPercent = submission.savings_rate;
+
+  const comparisons = [
+    { icon: '🏙️', label: 'City', text: analysis.peerComparison.vsCity },
+    { icon: '👥', label: 'Age', text: analysis.peerComparison.vsAgeGroup },
+    { icon: '💼', label: 'Industry', text: analysis.peerComparison.vsIndustry },
+    { icon: '🌍', label: 'Overall', text: analysis.peerComparison.vsOverall },
+  ];
 
   return (
-    <main className="min-h-screen bg-[#0a0a0f] text-white">
-      {/* Gradient orb */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none" 
-        style={{ background: `radial-gradient(ellipse at center, ${tier.color}15 0%, transparent 70%)` }} />
+    <main className="min-h-screen bg-[#09090b] text-white">
+      {/* Subtle gradient */}
+      <div className="fixed inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at top, ${tier.color}08 0%, transparent 50%)` }} />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0a0a0f]/80 border-b border-white/5">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="text-2xl">🔥</Link>
-          <span className="text-sm font-bold uppercase tracking-widest" style={{ color: tier.color }}>{tier.emoji} {tier.name}</span>
-          <Link href={`/results/${submission.id}`} className="text-white/50 text-sm">Share</Link>
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#09090b]/90 border-b border-white/5">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold">🔥 cooked</Link>
+          <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ backgroundColor: `${tier.color}20`, color: tier.color }}>
+            {tier.emoji} {tier.name}
+          </span>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         
-        {/* Desktop: 2-column layout, Mobile: stacked */}
-        <div className="grid lg:grid-cols-[300px_1fr] gap-8">
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           
-          {/* Left Column - Score & Summary (sticky on desktop) */}
-          <div className="lg:sticky lg:top-24 lg:self-start space-y-6">
-            {/* Score Ring */}
-            <section className="flex flex-col items-center text-center">
-              <ScoreRing score={submission.score} color={tier.color} />
-              <p className="mt-6 text-white/60 text-sm leading-relaxed">{analysis.summary.oneLiner}</p>
-            </section>
+          {/* Score Card - spans 1 col */}
+          <Card className="flex flex-col items-center justify-center py-8">
+            <ScoreRing score={submission.score} color={tier.color} size={160} />
+            <p className="mt-4 text-white/50 text-sm text-center max-w-[200px]">Cooked Score</p>
+          </Card>
 
-            {/* Top Issue */}
-            <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-xl flex-shrink-0">🎯</div>
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-1">Top Issue</div>
-                  <p className="text-white font-medium">{analysis.summary.biggestProblem}</p>
-                </div>
+          {/* Summary Card - spans 2 cols */}
+          <Card span={2} className="flex flex-col justify-center">
+            <div className="text-xs text-white/40 uppercase tracking-wider mb-2">Summary</div>
+            <p className="text-lg text-white/90 leading-relaxed mb-4">{analysis.summary.oneLiner}</p>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
+              <span className="text-xl">🎯</span>
+              <div>
+                <div className="text-xs text-orange-400 uppercase tracking-wider">Top Issue</div>
+                <p className="text-white font-medium">{analysis.summary.biggestProblem}</p>
               </div>
-            </section>
+            </div>
+          </Card>
 
-            {/* Spending Breakdown */}
-            <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 space-y-4">
+          {/* Money Stats - 3 small cards */}
+          <Card>
+            <StatWidget icon="💰" label="Monthly Income" value={`$${Math.round(monthlyIncome).toLocaleString()}`} />
+          </Card>
+          <Card>
+            <StatWidget icon="🏠" label="Rent Burden" value={`${rentPercent}%`} color={rentPercent > 30 ? '#ef4444' : '#4ade80'} subtext={`$${submission.monthly_rent.toLocaleString()}/mo`} />
+          </Card>
+          <Card>
+            <StatWidget icon="📈" label="Savings Rate" value={`${submission.savings_rate}%`} color={submission.savings_rate >= 20 ? '#4ade80' : submission.savings_rate >= 10 ? '#f59e0b' : '#ef4444'} />
+          </Card>
+
+          {/* Spending Breakdown - spans 2 cols */}
+          <Card span={2}>
+            <div className="text-xs text-white/40 uppercase tracking-wider mb-4">💸 Spending Breakdown</div>
+            <div className="space-y-4">
+              <ProgressBar label="Rent" percent={rentPercent} color="#ef4444" />
+              <ProgressBar label="Debt Payments" percent={debtPercent} color="#f97316" />
+              <ProgressBar label="Savings" percent={submission.savings_rate} color="#22c55e" />
+            </div>
+          </Card>
+
+          {/* Net Worth */}
+          <Card>
+            <StatWidget 
+              icon="💎" 
+              label="Net Worth" 
+              value={`${submission.net_worth < 0 ? '-' : ''}$${Math.abs(submission.net_worth).toLocaleString()}`}
+              color={submission.net_worth >= 0 ? '#4ade80' : '#ef4444'}
+            />
+          </Card>
+
+          {/* Comparisons - each is a card */}
+          {comparisons.map((comp, i) => (
+            <Card key={i} className="cursor-pointer hover:bg-white/[0.05] transition-colors" onClick={() => toggleCard(i)}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">💸</span>
-                <span className="text-xs font-bold uppercase tracking-widest text-white/40">Money Breakdown</span>
+                <span className="text-xl">{comp.icon}</span>
+                <span className="text-xs text-white/40 uppercase tracking-wider">{comp.label}</span>
               </div>
-              <HorizontalBar label="Rent" percent={rentPercent} amount={submission.monthly_rent} color="#ef4444" />
-              <HorizontalBar label="Debt" percent={debtPercent} amount={Math.round(debtPayments)} color="#f97316" />
-              <HorizontalBar label="Savings" percent={savingsPercent} amount={Math.round(savingsAmount)} color="#22c55e" />
-              <div className="pt-3 border-t border-white/10 flex justify-between text-sm">
-                <span className="text-white/50">Monthly</span>
-                <span className="font-bold text-white">${Math.round(monthlyIncome).toLocaleString()}</span>
-              </div>
-            </section>
-          </div>
+              <p className={`text-sm text-white/70 leading-relaxed ${expandedCards.has(i) ? '' : 'line-clamp-3'}`}>
+                {comp.text}
+              </p>
+              {!expandedCards.has(i) && comp.text.length > 120 && (
+                <div className="text-xs text-white/30 mt-2">tap to expand</div>
+              )}
+            </Card>
+          ))}
 
-          {/* Right Column - Details */}
-          <div className="space-y-6">
-            
-            {/* Peer Comparisons - Grid on desktop, scroll on mobile */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📊</span>
-                <span className="text-xs font-bold uppercase tracking-widest text-white/40">How You Compare</span>
-                <span className="text-xs text-white/30 ml-auto hidden md:block">Click cards to flip</span>
-              </div>
-              
-              {/* Mobile: horizontal scroll */}
-              <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:hidden -mx-4 px-4">
-                <FlipCard icon="🏙️" label="Your City" frontText={analysis.peerComparison.vsCity.slice(0, 100) + '...'} backText={analysis.peerComparison.vsCity} />
-                <FlipCard icon="👥" label="Age Group" frontText={analysis.peerComparison.vsAgeGroup.slice(0, 100) + '...'} backText={analysis.peerComparison.vsAgeGroup} />
-                <FlipCard icon="💼" label="Industry" frontText={analysis.peerComparison.vsIndustry.slice(0, 100) + '...'} backText={analysis.peerComparison.vsIndustry} />
-                <FlipCard icon="🌍" label="Overall" frontText={analysis.peerComparison.vsOverall.slice(0, 100) + '...'} backText={analysis.peerComparison.vsOverall} />
-              </div>
-              
-              {/* Desktop: 2x2 grid */}
-              <div className="hidden md:grid md:grid-cols-2 gap-3">
-                <FlipCard icon="🏙️" label="Your City" frontText={analysis.peerComparison.vsCity.slice(0, 80) + '...'} backText={analysis.peerComparison.vsCity} />
-                <FlipCard icon="👥" label="Age Group" frontText={analysis.peerComparison.vsAgeGroup.slice(0, 80) + '...'} backText={analysis.peerComparison.vsAgeGroup} />
-                <FlipCard icon="💼" label="Industry" frontText={analysis.peerComparison.vsIndustry.slice(0, 80) + '...'} backText={analysis.peerComparison.vsIndustry} />
-                <FlipCard icon="🌍" label="Overall" frontText={analysis.peerComparison.vsOverall.slice(0, 80) + '...'} backText={analysis.peerComparison.vsOverall} />
-              </div>
-            </section>
+          {/* Issues - spans full width */}
+          <Card span={3}>
+            <div className="text-xs text-white/40 uppercase tracking-wider mb-4">⚠️ What&apos;s Cooking You</div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {analysis.rootCauses.map((cause, i) => {
+                const s = SEVERITY[cause.severity];
+                return (
+                  <div key={i} className={`${s.bg} ${s.border} border rounded-xl p-4`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-2 h-2 rounded-full ${s.dot}`} />
+                      <span className="font-semibold text-white text-sm">{cause.issue}</span>
+                    </div>
+                    <p className="text-white/60 text-xs leading-relaxed">{cause.explanation}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
 
-            {/* Issues - 2 column on desktop */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">⚠️</span>
-                <span className="text-xs font-bold uppercase tracking-widest text-white/40">What&apos;s Cooking You</span>
+          {/* Action Plan - spans 2 cols */}
+          <Card span={2}>
+            <div className="text-xs text-white/40 uppercase tracking-wider mb-4">🎯 Action Plan</div>
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                <div className="text-xs text-orange-400 uppercase tracking-wider mb-1">⚡ Today</div>
+                <p className="text-white font-medium">{analysis.actionPlan.immediate}</p>
               </div>
               <div className="grid md:grid-cols-2 gap-3">
-                {analysis.rootCauses.map((cause, i) => (
-                  <IssueCard key={i} issue={cause.issue} explanation={cause.explanation} severity={cause.severity} />
-                ))}
+                <div className="p-4 rounded-xl bg-white/5">
+                  <div className="text-xs text-white/40 uppercase tracking-wider mb-2">📅 30 Days</div>
+                  <ul className="space-y-2">
+                    {analysis.actionPlan.thirtyDays.map((item, i) => (
+                      <li key={i} className="text-sm text-white/70 flex items-start gap-2">
+                        <span className="text-white/30">{i + 1}.</span> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-4 rounded-xl bg-white/5">
+                  <div className="text-xs text-white/40 uppercase tracking-wider mb-2">🎯 90 Days</div>
+                  <ul className="space-y-2">
+                    {analysis.actionPlan.ninetyDays.map((item, i) => (
+                      <li key={i} className="text-sm text-white/70 flex items-start gap-2">
+                        <span className="text-green-400">✓</span> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </section>
-
-            {/* Action Plan & Encouragement - side by side on desktop */}
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* Action Plan Timeline */}
-              <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-6">
-                  <span className="text-xl">🎯</span>
-                  <span className="text-xs font-bold uppercase tracking-widest text-white/40">Action Plan</span>
-                </div>
-                <div className="ml-3">
-                  <TimelineItem period="Today" items={[analysis.actionPlan.immediate]} icon="⚡" highlight />
-                  <TimelineItem period="30 Days" items={analysis.actionPlan.thirtyDays} icon="📅" />
-                  <TimelineItem period="90 Days" items={analysis.actionPlan.ninetyDays} icon="🎯" />
-                </div>
-              </section>
-
-              {/* What You're Doing Right */}
-              <section className="bg-green-500/5 border border-green-500/20 rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-xl">💪</span>
-                  <span className="text-xs font-bold uppercase tracking-widest text-green-400">Doing Right</span>
-                </div>
-                <ul className="space-y-3">
-                  {analysis.encouragement.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="text-green-400 mt-0.5">✓</span>
-                      <span className="text-white/80 text-sm">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
             </div>
+          </Card>
 
-            {/* Footer Actions */}
-            <section className="flex gap-3">
-              <Link href={`/results/${submission.id}`} className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium text-white/70 hover:bg-white/10 transition">
-                🔗 Share
-              </Link>
-              <Link href="/leaderboard" className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium text-white/70 hover:bg-white/10 transition">
-                🏆 Leaderboard
-              </Link>
-            </section>
-          </div>
+          {/* Doing Right */}
+          <Card className="bg-green-500/5 border-green-500/20">
+            <div className="text-xs text-green-400 uppercase tracking-wider mb-3">💪 Doing Right</div>
+            <ul className="space-y-2">
+              {analysis.encouragement.map((item, i) => (
+                <li key={i} className="text-sm text-white/70 flex items-start gap-2">
+                  <span className="text-green-400">✓</span> {item}
+                </li>
+              ))}
+            </ul>
+          </Card>
+
         </div>
 
-        {/* Disclaimer */}
-        <p className="text-center text-white/30 text-xs py-4 italic">{analysis.disclaimer}</p>
+        {/* Footer */}
+        <div className="mt-8 flex gap-3 max-w-md mx-auto">
+          <Link href={`/results/${submission.id}`} className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium hover:bg-white/10 transition">
+            🔗 Share
+          </Link>
+          <Link href="/leaderboard" className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-medium hover:bg-white/10 transition">
+            🏆 Leaderboard
+          </Link>
+        </div>
 
+        <p className="text-center text-white/30 text-xs py-6 italic">{analysis.disclaimer}</p>
       </div>
     </main>
   );
