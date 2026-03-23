@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { IncomeBreakdown } from '@/components/charts/IncomeBreakdown';
 
 interface Analysis {
   summary: {
@@ -322,6 +323,18 @@ export default function ReportPage() {
               </div>
             </div>
           </section>
+
+          {/* Income Breakdown Chart */}
+          <IncomeBreakdown
+            monthlyIncome={submission.annual_income / 12}
+            monthlyRent={submission.monthly_rent}
+            monthlyDebtPayments={
+              // Estimate monthly debt payments (assuming ~5% of total debt per month for credit cards, 1.5% for loans)
+              ((submission.credit_card_debt || 0) * 0.03) + 
+              (((submission.student_loans || 0) + (submission.car_loan || 0) + (submission.other_debt || 0)) * 0.02)
+            }
+            monthlySavings={(submission.annual_income / 12) * (submission.savings_rate / 100)}
+          />
 
           {/* Peer Comparison */}
           <section className="space-y-4">
