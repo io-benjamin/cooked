@@ -373,10 +373,14 @@ export default function ResultsPage() {
             </p>
             <button
               onClick={async () => {
+                if (!submission?.id) {
+                  console.error('No submission ID available');
+                  return;
+                }
                 const res = await fetch('/api/checkout', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ submissionId: id }),
+                  body: JSON.stringify({ submissionId: submission.id }),
                 });
                 const data = await res.json();
                 if (data.url) window.location.href = data.url;
