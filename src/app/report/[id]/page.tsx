@@ -88,6 +88,22 @@ export default function ReportPage() {
         const data = await res.json();
         setSubmission(data);
         
+        // Check if paid (either already marked or has session_id from Stripe redirect)
+        if (!data.paid && !sessionId) {
+          setError('Payment required');
+          setLoading(false);
+          return;
+        }
+        
+        // If coming from Stripe, mark as paid
+        if (sessionId && !data.paid) {
+          await fetch(`/api/submissions/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paid: true }),
+          });
+        }
+        
         // If we already have analysis cached, use it
         if (data.ai_analysis) {
           setAnalysis(data.ai_analysis);
@@ -178,6 +194,26 @@ export default function ReportPage() {
               />
             ))}
           </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error === 'Payment required') {
+    return (
+      <main className="min-h-screen bg-[#030305] flex items-center justify-center">
+        <div className="text-center space-y-4 max-w-md px-6">
+          <div className="text-5xl">🔒</div>
+          <h1 className="text-2xl font-bold text-white">Payment Required</h1>
+          <p className="text-white/50">
+            Complete payment to unlock your full AI-powered financial analysis.
+          </p>
+          <Link
+            href="/"
+            className="inline-block px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-semibold hover:opacity-90 transition"
+          >
+            Back to Quiz
+          </Link>
         </div>
       </main>
     );

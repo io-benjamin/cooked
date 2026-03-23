@@ -75,10 +75,7 @@ export function CookedMeter({ result, submissionId }: CookedMeterProps) {
   const topIssue = getTopIssue(result);
   
   const handleCheckout = async () => {
-    if (!submissionId) {
-      console.error('No submission ID available yet');
-      return;
-    }
+    if (!submissionId) return;
     
     setLoading(true);
     try {
@@ -93,11 +90,9 @@ export function CookedMeter({ result, submissionId }: CookedMeterProps) {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        console.error('No checkout URL returned:', data);
         setLoading(false);
       }
-    } catch (error) {
-      console.error('Checkout error:', error);
+    } catch {
       setLoading(false);
     }
   };

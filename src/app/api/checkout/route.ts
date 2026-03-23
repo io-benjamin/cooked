@@ -12,13 +12,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    console.log('Checkout request body:', body);
-    
-    const { submissionId, email } = body;
+    const { submissionId, email } = await request.json();
     
     if (!submissionId) {
-      console.log('Missing submissionId, received:', body);
       return NextResponse.json({ error: 'Missing submissionId' }, { status: 400 });
     }
 
@@ -47,7 +43,7 @@ export async function POST(request: NextRequest) {
         submissionId,
       },
       success_url: `${origin}/report/${submissionId}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/results/${submissionId}`,
+      cancel_url: `${origin}/?cancelled=true`,
       // Enable Apple Pay, Google Pay, etc.
       payment_method_options: {
         card: {

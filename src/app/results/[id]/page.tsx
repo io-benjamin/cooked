@@ -373,26 +373,13 @@ export default function ResultsPage() {
             </p>
             <button
               onClick={async () => {
-                console.log('Button clicked, submission:', submission);
-                console.log('Submission ID:', submission?.id);
-                
-                if (!submission?.id) {
-                  console.error('No submission ID available');
-                  alert('Error: No submission ID');
-                  return;
-                }
-                
-                const payload = { submissionId: submission.id };
-                console.log('Sending payload:', payload);
-                console.log('Stringified:', JSON.stringify(payload));
-                
+                if (!submission?.id) return;
                 const res = await fetch('/api/checkout', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload),
+                  body: JSON.stringify({ submissionId: submission.id }),
                 });
                 const data = await res.json();
-                console.log('Response:', data);
                 if (data.url) window.location.href = data.url;
               }}
               className="w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all"
