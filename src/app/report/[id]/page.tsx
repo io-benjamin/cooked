@@ -35,7 +35,6 @@ interface Submission {
   tier: string;
   paid: boolean;
   ai_analysis: Analysis | null;
-  // Include all the input fields for AI analysis
   age: number;
   city: string;
   industry: string;
@@ -55,11 +54,20 @@ interface Submission {
   net_worth: number;
 }
 
-const SEVERITY_COLORS = {
-  critical: 'bg-red-500/20 border-red-500/50 text-red-400',
-  high: 'bg-orange-500/20 border-orange-500/50 text-orange-400',
-  medium: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400',
-  low: 'bg-green-500/20 border-green-500/50 text-green-400',
+const TIER_INFO: Record<string, { name: string; emoji: string; color: string }> = {
+  'raw': { name: 'RAW', emoji: '🧊', color: '#22d3ee' },
+  'light-sizzle': { name: 'LIGHT SIZZLE', emoji: '🍳', color: '#4ade80' },
+  'simmering': { name: 'SIMMERING', emoji: '🥘', color: '#facc15' },
+  'sauteed': { name: 'SAUTÉED', emoji: '🔥', color: '#fb923c' },
+  'well-done': { name: 'WELL DONE', emoji: '☠️', color: '#f87171' },
+  'charred': { name: 'CHARRED', emoji: '💀', color: '#991b1b' },
+};
+
+const SEVERITY_CONFIG = {
+  critical: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', badge: 'bg-red-500/20 text-red-400' },
+  high: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400', badge: 'bg-orange-500/20 text-orange-400' },
+  medium: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', badge: 'bg-yellow-500/20 text-yellow-400' },
+  low: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400', badge: 'bg-green-500/20 text-green-400' },
 };
 
 export default function ReportPage() {
@@ -77,7 +85,6 @@ export default function ReportPage() {
   useEffect(() => {
     async function fetchAndAnalyze() {
       try {
-        // Fetch the submission
         const res = await fetch(`/api/submissions/${id}`);
         if (!res.ok) {
           setError('Report not found');
@@ -145,25 +152,19 @@ export default function ReportPage() {
           }),
         });
         
-        if (!analysisRes.ok) {
-          throw new Error('Analysis failed');
-        }
+        if (!analysisRes.ok) throw new Error('Analysis failed');
         
         const analysisData = await analysisRes.json();
         setAnalysis(analysisData.analysis);
         
-        // Cache the analysis in Supabase
-        await fetch('/api/submissions', {
+        // Cache the analysis
+        await fetch(`/api/submissions/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id,
-            aiAnalysis: analysisData.analysis,
-          }),
+          body: JSON.stringify({ aiAnalysis: analysisData.analysis }),
         });
         
         setAnalyzing(false);
-        
       } catch (err) {
         console.error('Error:', err);
         setError('Failed to load report');
@@ -173,34 +174,46 @@ export default function ReportPage() {
     }
     
     fetchAndAnalyze();
-  }, [id]);
+  }, [id, sessionId]);
 
+  const tier = submission ? (TIER_INFO[submission.tier] || TIER_INFO['simmering']) : TIER_INFO['simmering'];
+
+  // Loading state
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#030305] flex items-center justify-center">
+      <main className="min-h-screen bg-[#050505] flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl animate-pulse">📊</div>
+          <div className="text-5xl animate-pulse">📊</div>
           <p className="text-white/50 mt-4">Loading your report...</p>
         </div>
       </main>
     );
   }
 
+  // Analyzing state
   if (analyzing) {
     return (
-      <main className="min-h-screen bg-[#030305] flex items-center justify-center">
-        <div className="text-center max-w-md px-6">
-          <div className="text-5xl mb-4">🔥</div>
-          <h1 className="text-2xl font-bold text-white mb-2">Analyzing your finances...</h1>
-          <p className="text-white/50">
-            Our AI is comparing your data to real users and generating personalized insights. This takes about 10 seconds.
+      <main className="min-h-screen bg-[#050505] flex items-center justify-center relative overflow-hidden">
+        <div className="fixed inset-0 grid-bg opacity-30" />
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] blur-3xl pointer-events-none"
+          style={{ background: `radial-gradient(ellipse at center, ${tier.color}20 0%, transparent 70%)` }} />
+        
+        <div className="relative text-center max-w-md px-6">
+          <div className="text-6xl mb-6 animate-bounce">🔥</div>
+          <h1 className="text-3xl font-black text-white mb-3">Crunching the numbers...</h1>
+          <p className="text-white/50 leading-relaxed">
+            Comparing your finances to {'>'}1,000 users and generating your personalized action plan.
           </p>
-          <div className="mt-6 flex justify-center gap-1">
+          <div className="mt-8 flex justify-center gap-2">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="w-2 h-2 bg-white/50 rounded-full animate-bounce"
-                style={{ animationDelay: `${i * 0.15}s` }}
+                className="w-3 h-3 rounded-full animate-bounce"
+                style={{ 
+                  backgroundColor: tier.color,
+                  animationDelay: `${i * 0.15}s`,
+                  animationDuration: '0.8s'
+                }}
               />
             ))}
           </div>
@@ -209,36 +222,36 @@ export default function ReportPage() {
     );
   }
 
+  // Payment required
   if (error === 'Payment required') {
     return (
-      <main className="min-h-screen bg-[#030305] flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-md px-6">
-          <div className="text-5xl">🔒</div>
-          <h1 className="text-2xl font-bold text-white">Payment Required</h1>
-          <p className="text-white/50">
-            Complete payment to unlock your full AI-powered financial analysis.
+      <main className="min-h-screen bg-[#050505] flex items-center justify-center relative overflow-hidden">
+        <div className="fixed inset-0 grid-bg opacity-30" />
+        <div className="text-center space-y-6 max-w-md px-6 relative">
+          <div className="text-6xl">🔒</div>
+          <h1 className="text-3xl font-black text-white">Payment Required</h1>
+          <p className="text-white/50 leading-relaxed">
+            Complete payment to unlock your full AI-powered financial analysis and personalized action plan.
           </p>
           <Link
             href="/"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl font-semibold hover:opacity-90 transition"
+            className="inline-block px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl font-bold text-lg hover:scale-105 transition-transform"
           >
-            Back to Quiz
+            Back to Quiz →
           </Link>
         </div>
       </main>
     );
   }
 
-  if (error || !submission) {
+  // Error state
+  if (error || !submission || !analysis) {
     return (
-      <main className="min-h-screen bg-[#030305] flex items-center justify-center">
+      <main className="min-h-screen bg-[#050505] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="text-4xl">😕</div>
-          <p className="text-white/70">{error || 'Report not found'}</p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-3 bg-white/10 rounded-xl font-semibold hover:bg-white/20 transition"
-          >
+          <div className="text-5xl">😕</div>
+          <p className="text-white/70 text-lg">{error || 'Something went wrong'}</p>
+          <Link href="/" className="inline-block px-6 py-3 bg-white/10 rounded-xl font-semibold hover:bg-white/20 transition">
             Go Home
           </Link>
         </div>
@@ -246,157 +259,216 @@ export default function ReportPage() {
     );
   }
 
-  if (!analysis) {
-    return (
-      <main className="min-h-screen bg-[#030305] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="text-4xl">⚠️</div>
-          <p className="text-white/70">Analysis failed to load</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-white/10 rounded-xl font-semibold hover:bg-white/20 transition"
-          >
-            Try Again
-          </button>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-[#030305] text-white">
+    <main className="min-h-screen bg-[#050505] text-white relative overflow-hidden">
+      {/* Background effects */}
+      <div className="fixed inset-0 grid-bg opacity-30" />
+      <div
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(ellipse at center, ${tier.color}15 0%, transparent 70%)` }}
+      />
+
       {/* Header */}
-      <header className="border-b border-white/5">
+      <header className="relative z-50 border-b border-white/5 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🔥</span>
-            <span className="font-bold">am i cooked?</span>
+          <Link href="/" className="flex items-center gap-3 group">
+            <span className="text-3xl group-hover:animate-pulse">🔥</span>
+            <span className="font-black text-xl tracking-tight">
+              am i <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">cooked</span>?
+            </span>
           </Link>
-          <div className="text-sm text-white/50">Full Report</div>
+          <div className="px-3 py-1 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 text-sm font-medium text-orange-400">
+            Full Report
+          </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        {/* Summary */}
-        <section className="mb-8">
-          <div className="text-center mb-6">
-            <div className="text-6xl font-black mb-2">{submission.score}</div>
-            <div className="text-white/50 uppercase tracking-wider text-sm">{submission.tier}</div>
-          </div>
-          
-          <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-            <p className="text-lg text-white/90 mb-4">{analysis.summary.oneLiner}</p>
-            <div className="flex items-center gap-2 text-red-400">
-              <span>🎯</span>
-              <span className="font-medium">Main Issue:</span>
-              <span>{analysis.summary.biggestProblem}</span>
-            </div>
-          </div>
-        </section>
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-2xl">
+        <div className="space-y-6">
 
-        {/* Peer Comparison */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span>📊</span> How You Compare
-          </h2>
-          <div className="space-y-3">
-            {[
-              { label: 'Your City', value: analysis.peerComparison.vsCity },
-              { label: 'Your Age Group', value: analysis.peerComparison.vsAgeGroup },
-              { label: 'Your Industry', value: analysis.peerComparison.vsIndustry },
-              { label: 'Overall', value: analysis.peerComparison.vsOverall },
-            ].map((item, i) => (
-              <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="text-xs text-white/40 uppercase tracking-wider mb-1">{item.label}</div>
-                <p className="text-white/80">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Root Causes */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span>🔍</span> What's Cooking You
-          </h2>
-          <div className="space-y-3">
-            {analysis.rootCauses.map((cause, i) => (
+          {/* Hero Section */}
+          <section className="glass rounded-3xl p-8 text-center relative overflow-hidden">
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{ background: `radial-gradient(ellipse at center, ${tier.color}30 0%, transparent 70%)` }}
+            />
+            
+            <div className="relative">
+              <div className="text-white/40 text-sm mb-3 uppercase tracking-widest">Your Score</div>
               <div
-                key={i}
-                className={`rounded-xl p-4 border ${SEVERITY_COLORS[cause.severity]}`}
+                className="text-8xl font-black leading-none mb-2"
+                style={{ color: tier.color, textShadow: `0 0 60px ${tier.color}50` }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold">{cause.issue}</span>
-                  <span className="text-xs uppercase tracking-wider opacity-70">{cause.severity}</span>
-                </div>
-                <p className="text-sm opacity-80">{cause.explanation}</p>
+                {submission.score}
               </div>
-            ))}
-          </div>
-        </section>
+              <div className="flex items-center justify-center gap-2 mb-6" style={{ color: tier.color }}>
+                <span className="text-2xl">{tier.emoji}</span>
+                <span className="font-black text-xl uppercase tracking-wider">{tier.name}</span>
+              </div>
+              
+              <div className="max-w-md mx-auto">
+                <p className="text-white/70 text-lg leading-relaxed">{analysis.summary.oneLiner}</p>
+              </div>
+            </div>
+          </section>
 
-        {/* Action Plan */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span>🎯</span> Your Action Plan
-          </h2>
-          
-          <div className="space-y-4">
-            {/* Immediate */}
-            <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-4 border border-red-500/30">
-              <div className="text-xs text-red-400 uppercase tracking-wider mb-1">Do Today</div>
-              <p className="text-white">{analysis.actionPlan.immediate}</p>
+          {/* Main Problem */}
+          <section className="glass rounded-2xl p-6 border-l-4" style={{ borderLeftColor: tier.color }}>
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">🎯</div>
+              <div>
+                <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-1">Your #1 Issue</div>
+                <p className="text-white font-semibold text-lg">{analysis.summary.biggestProblem}</p>
+              </div>
             </div>
-            
-            {/* 30 Days */}
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <div className="text-xs text-white/40 uppercase tracking-wider mb-2">Next 30 Days</div>
-              <ul className="space-y-2">
-                {analysis.actionPlan.thirtyDays.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-white/30">→</span>
-                    <span className="text-white/80">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            {/* 90 Days */}
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <div className="text-xs text-white/40 uppercase tracking-wider mb-2">90 Day Goals</div>
-              <ul className="space-y-2">
-                {analysis.actionPlan.ninetyDays.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-white/30">→</span>
-                    <span className="text-white/80">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        {/* Encouragement */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span>💪</span> What You're Doing Right
-          </h2>
-          <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/30">
-            <ul className="space-y-2">
+          {/* Peer Comparison */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <span className="text-2xl">📊</span>
+              <span>How You Compare</span>
+            </h2>
+            
+            <div className="grid gap-3">
+              {[
+                { label: 'Your City', value: analysis.peerComparison.vsCity, icon: '🏙️' },
+                { label: 'Your Age Group', value: analysis.peerComparison.vsAgeGroup, icon: '👥' },
+                { label: 'Your Industry', value: analysis.peerComparison.vsIndustry, icon: '💼' },
+                { label: 'Overall', value: analysis.peerComparison.vsOverall, icon: '🌍' },
+              ].map((item, i) => (
+                <div key={i} className="glass rounded-2xl p-5 hover:bg-white/5 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <span className="text-2xl">{item.icon}</span>
+                    <div className="flex-1">
+                      <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-1">{item.label}</div>
+                      <p className="text-white/80 leading-relaxed">{item.value}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Root Causes */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <span className="text-2xl">🔍</span>
+              <span>What&apos;s Cooking You</span>
+            </h2>
+            
+            <div className="space-y-3">
+              {analysis.rootCauses.map((cause, i) => {
+                const severity = SEVERITY_CONFIG[cause.severity];
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-2xl p-5 border ${severity.bg} ${severity.border}`}
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <span className={`font-bold text-lg ${severity.text}`}>{cause.issue}</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${severity.badge}`}>
+                        {cause.severity}
+                      </span>
+                    </div>
+                    <p className="text-white/70 leading-relaxed">{cause.explanation}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Action Plan */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <span className="text-2xl">🎯</span>
+              <span>Your Action Plan</span>
+            </h2>
+            
+            <div className="space-y-4">
+              {/* Immediate */}
+              <div className="glass rounded-2xl p-5 border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-red-500/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">⚡</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-orange-400">Do Today</span>
+                </div>
+                <p className="text-white font-medium text-lg">{analysis.actionPlan.immediate}</p>
+              </div>
+              
+              {/* 30 Days */}
+              <div className="glass rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">📅</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-white/40">Next 30 Days</span>
+                </div>
+                <ul className="space-y-3">
+                  {analysis.actionPlan.thirtyDays.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold text-white/60 flex-shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="text-white/80">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {/* 90 Days */}
+              <div className="glass rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">🎯</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-white/40">90-Day Goals</span>
+                </div>
+                <ul className="space-y-3">
+                  {analysis.actionPlan.ninetyDays.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="text-green-400">✓</span>
+                      <span className="text-white/80">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* Encouragement */}
+          <section className="glass rounded-2xl p-6 border border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
+            <h2 className="text-xl font-black flex items-center gap-3 mb-4">
+              <span className="text-2xl">💪</span>
+              <span className="text-green-400">What You&apos;re Doing Right</span>
+            </h2>
+            <ul className="space-y-3">
               {analysis.encouragement.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-green-400">
-                  <span>✓</span>
+                <li key={i} className="flex items-start gap-3 text-green-400/90">
+                  <span className="mt-1">✓</span>
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
+          </section>
 
-        {/* Disclaimer */}
-        <section className="text-center text-white/30 text-sm py-8 border-t border-white/5">
-          <p>{analysis.disclaimer}</p>
-        </section>
+          {/* Share Button */}
+          <section className="flex gap-3">
+            <Link
+              href={`/results/${submission.id}`}
+              className="flex-1 glass rounded-2xl p-4 text-center hover:bg-white/5 transition-colors"
+            >
+              <span className="text-white/70">🔗 Share Results</span>
+            </Link>
+            <Link
+              href="/leaderboard"
+              className="flex-1 glass rounded-2xl p-4 text-center hover:bg-white/5 transition-colors"
+            >
+              <span className="text-white/70">🏆 Leaderboard</span>
+            </Link>
+          </section>
+
+          {/* Disclaimer */}
+          <section className="text-center py-6 border-t border-white/5">
+            <p className="text-white/30 text-sm italic">{analysis.disclaimer}</p>
+          </section>
+
+        </div>
       </div>
     </main>
   );
