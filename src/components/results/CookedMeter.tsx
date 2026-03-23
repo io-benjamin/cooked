@@ -5,6 +5,7 @@ import { CookedResult } from '@/types/calculator';
 
 interface CookedMeterProps {
   result: CookedResult;
+  submissionId: string;
   userCity: string;
   userAge: number;
   userIndustry: string;
@@ -65,12 +66,33 @@ function getTopIssue(result: CookedResult): { title: string; detail: string } {
   };
 }
 
-export function CookedMeter({ result }: CookedMeterProps) {
+export function CookedMeter({ result, submissionId }: CookedMeterProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showContent, setShowContent] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const tier = getTier(result.score);
   const topIssue = getTopIssue(result);
+  
+  const handleCheckout = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionId }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Trigger animations
@@ -230,7 +252,9 @@ export function CookedMeter({ result }: CookedMeterProps) {
         {/* CTA Button */}
         <div className={showContent ? 'animate-reveal-up' : ''} style={{ animationDelay: '0.5s' }}>
           <button 
-            className="w-full py-5 rounded-2xl font-display font-bold text-lg text-white relative overflow-hidden group transition-all duration-300 hover:-translate-y-1"
+            onClick={handleCheckout}
+            disabled={loading}
+            className="w-full py-5 rounded-2xl font-display font-bold text-lg text-white relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-wait"
             style={{ 
               background: tier.color,
               boxShadow: `0 10px 40px ${tier.color}40`,
@@ -244,7 +268,9 @@ export function CookedMeter({ result }: CookedMeterProps) {
           >
             {/* Button shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="relative z-10">Get Full Report — $5</span>
+            <span className="relative z-10">
+              {loading ? 'Loading...' : 'Get Full Report — $5'}
+            </span>
           </button>
           <p className="mt-4 text-white/25 text-xs">
             AI-powered analysis • Personalized action plan

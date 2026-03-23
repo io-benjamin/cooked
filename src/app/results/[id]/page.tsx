@@ -364,10 +364,34 @@ export default function ResultsPage() {
             )}
           </div>
 
+          {/* Full Report CTA */}
+          <div className="glass rounded-2xl p-6 text-center border border-orange-500/30 bg-gradient-to-b from-orange-500/10 to-transparent">
+            <div className="text-3xl mb-3">🔥</div>
+            <h3 className="text-xl font-bold text-white mb-2">Want the full breakdown?</h3>
+            <p className="text-white/50 text-sm mb-4">
+              Get AI-powered analysis comparing you to {totalUsers.toLocaleString()}+ users, personalized action plan, and specific advice for your situation.
+            </p>
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/checkout', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ submissionId: id }),
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}
+              className="w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl transition-all"
+            >
+              Get Full Report — $5
+            </button>
+            <p className="text-white/30 text-xs mt-3">One-time payment • Instant access</p>
+          </div>
+
           {/* Leaderboard Button */}
           <Link
             href="/leaderboard"
-            className="block w-full h-14 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-lg rounded-2xl flex items-center justify-center transition-all"
+            className="block w-full h-14 bg-white/5 hover:bg-white/10 text-white font-bold text-lg rounded-2xl flex items-center justify-center transition-all border border-white/10"
           >
             🏆 View Leaderboard
           </Link>
