@@ -18,6 +18,7 @@ export default function Home() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [previousSubmission, setPreviousSubmission] = useState<{ id: string; score: number } | null>(null);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   // Check for existing submission on mount
   useEffect(() => {
     const id = localStorage.getItem('cooked_submission_id');
@@ -54,7 +55,44 @@ export default function Home() {
     setResult(calculatedResult);
     setIsLoading(false);
     setStep('results');
-    // Submission to Supabase happens in handleEmailCapture once we have the email
+    
+    // Create submission immediately (without email) so we have an ID for checkout
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          age: inputs.age,
+          city: inputs.city,
+          industry: inputs.industry,
+          annualIncome: inputs.annualIncome,
+          monthlyRent: inputs.monthlyRent,
+          studentLoans: inputs.studentLoans || 0,
+          creditCardDebt: inputs.creditCardDebt || 0,
+          carLoan: inputs.carLoan || 0,
+          otherDebt: inputs.otherDebt || 0,
+          totalSavings: inputs.totalSavings || 0,
+          retirementSavings: inputs.retirementSavings || 0,
+          investments: inputs.investments || 0,
+          score: calculatedResult.score,
+          tier: calculatedResult.tier,
+          dti: calculatedResult.metrics.dti,
+          rentBurden: calculatedResult.metrics.rentBurden,
+          savingsRate: calculatedResult.metrics.savingsRate,
+          netWorth: calculatedResult.metrics.netWorth,
+          avatarUrl: avatarUrl,
+          isPublic: true,
+        }),
+      });
+      const data = await res.json();
+      if (data?.id) {
+        setSubmissionId(data.id);
+        localStorage.setItem('cooked_submission_id', data.id);
+        localStorage.setItem('cooked_submission_score', String(calculatedResult.score));
+      }
+    } catch {
+      console.error('Failed to create submission');
+    }
   };
 
   // Called by CookedMeter blur overlay when user enters email — submits to Supabase with email included
@@ -270,6 +308,7 @@ export default function Home() {
           <div className="space-y-6 animate-slide-up">
             <CookedMeter
               result={result}
+              submissionId={submissionId || ''}
               userCity={userInputs?.city || 'Unknown'}
               userAge={userInputs?.age || 25}
               userIndustry={userInputs?.industry?.split(' / ')[0] || 'Unknown'}

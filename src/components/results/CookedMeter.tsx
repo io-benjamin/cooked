@@ -75,6 +75,11 @@ export function CookedMeter({ result, submissionId }: CookedMeterProps) {
   const topIssue = getTopIssue(result);
   
   const handleCheckout = async () => {
+    if (!submissionId) {
+      console.error('No submission ID available yet');
+      return;
+    }
+    
     setLoading(true);
     try {
       const res = await fetch('/api/checkout', {
@@ -87,6 +92,9 @@ export function CookedMeter({ result, submissionId }: CookedMeterProps) {
       
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        console.error('No checkout URL returned:', data);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Checkout error:', error);
@@ -253,7 +261,7 @@ export function CookedMeter({ result, submissionId }: CookedMeterProps) {
         <div className={showContent ? 'animate-reveal-up' : ''} style={{ animationDelay: '0.5s' }}>
           <button 
             onClick={handleCheckout}
-            disabled={loading}
+            disabled={loading || !submissionId}
             className="w-full py-5 rounded-2xl font-display font-bold text-lg text-white relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-wait"
             style={{ 
               background: tier.color,
