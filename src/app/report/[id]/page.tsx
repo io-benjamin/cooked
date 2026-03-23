@@ -88,20 +88,30 @@ export default function ReportPage() {
         const data = await res.json();
         setSubmission(data);
         
-        // Check if paid (either already marked or has session_id from Stripe redirect)
-        if (!data.paid && !sessionId) {
-          setError('Payment required');
-          setLoading(false);
-          return;
-        }
-        
-        // If coming from Stripe, mark as paid
-        if (sessionId && !data.paid) {
+        // Check if already paid
+        if (data.paid) {
+          // Already verified paid, continue
+        } else if (sessionId) {
+          // Verify the Stripe session is actually paid
+          const verifyRes = await fetch(`/api/verify-payment?session_id=${sessionId}`);
+          const verifyData = await verifyRes.json();
+          
+          if (!verifyData.paid) {
+            setError('Payment required');
+            setLoading(false);
+            return;
+          }
+          
+          // Mark as paid in our database
           await fetch(`/api/submissions/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paid: true }),
           });
+        } else {
+          setError('Payment required');
+          setLoading(false);
+          return;
         }
         
         // If we already have analysis cached, use it
